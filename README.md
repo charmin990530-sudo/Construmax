@@ -41,3 +41,4 @@ vercel.comNew → Project → Other → Framework: Other. Output directory: `.`.
 - Contraste WCAG AA en todos los pares de texto
 - Navegación por teclado con focus trap en menús
 - `prefers-reduced-motion` y `prefers-contrast` respetados
+# Construmax
