@@ -180,11 +180,28 @@ const Index = (function () {
   const Peek = (function () {
     const box = $('#peek'), img = $('#peekImg'), tag = $('#peekN');
     let rafId = 0, tx = 0, ty = 0, cx = 0, cy = 0, on = false;
+    let vw = window.innerWidth, vh = window.innerHeight;
+
+    /* Mantiene la vista previa dentro del viewport: si no cabe a la
+       derecha del cursor, se voltea al lado izquierdo. */
+    function place() {
+      const w = box.offsetWidth || 240;
+      const h = box.offsetHeight || 320;
+      const M = 16, G = 26;
+      let nx = tx + G;
+      if (nx + w > vw - M) nx = tx - w - G;
+      if (nx < M) nx = M;
+      let ny = ty - h / 2;
+      if (ny < M) ny = M;
+      if (ny + h > vh - M) ny = Math.max(M, vh - h - M);
+      return [nx, ny];
+    }
 
     function loop() {
-      cx += (tx - cx) * 0.16;
-      cy += (ty - cy) * 0.16;
-      box.style.transform = 'translate3d(' + (cx + 24) + 'px,' + (cy - 150) + 'px,0)';
+      const [ax, ay] = place();
+      cx += (ax - cx) * 0.18;
+      cy += (ay - cy) * 0.18;
+      box.style.transform = 'translate3d(' + cx.toFixed(1) + 'px,' + cy.toFixed(1) + 'px,0)';
       rafId = requestAnimationFrame(loop);
     }
     function start() { if (!rafId) loop(); }
@@ -194,7 +211,11 @@ const Index = (function () {
       img.src = src; tag.textContent = name;
       box.hidden = false;
       requestAnimationFrame(() => box.classList.add('is-on'));
-      on = true; start();
+      on = true;
+      /* Posicionamos de golpe la primera vez para que no entre desde el origen */
+      const [ax, ay] = place();
+      cx = ax; cy = ay;
+      start();
     }
     function hide() {
       if (!box || !on) return;
@@ -204,6 +225,7 @@ const Index = (function () {
 
     if (!coarse) {
       document.addEventListener('mousemove', (e) => { tx = e.clientX; ty = e.clientY; }, { passive: true });
+      window.addEventListener('resize', () => { vw = window.innerWidth; vh = window.innerHeight; hide(); });
       document.addEventListener('mouseover', (e) => {
         const r = e.target.closest('[data-peek]');
         if (r) show(r.dataset.peek, r.dataset.peekn);
@@ -351,6 +373,7 @@ const Router = (function () {
 
     Drawer.close();
     WA.close();
+    document.body.classList.toggle('is-contacto', route.page === 'contacto');
     window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
     const main = $('#contenido');
     if (main) main.focus({ preventScroll: true });
@@ -521,28 +544,35 @@ const Counters = (function () {
 const Proc = (function () {
   const list = $('#procList'), img = $('#procImg'), tag = $('#procTag');
   const steps = $$('.step');
-  let last = -1;
+  let last = 0, token = 0;
+
+  /* Precalentamos las cuatro fotos: si no, el cambio se ve como un parpadeo */
+  function preload() {
+    STAGES.forEach((s) => { const im = new Image(); im.src = s.i; });
+  }
 
   function set(i) {
-    if (i === last || !steps[i]) return;
+    if (i === last || !steps[i] || !img) return;
     last = i;
     steps.forEach((s, k) => s.classList.toggle('is-on', k === i));
     if (tag) tag.textContent = STAGES[i].t;
-    if (img) {
-      img.src = STAGES[i].i;
-      img.alt = STAGES[i].a;
-    }
+    img.alt = STAGES[i].a;
+    /* Solo cambiamos el src cuando la foto ya está en caché */
+    const next = new Image();
+    const mine = ++token;
+    next.onload = next.onerror = () => { if (mine === token) img.src = next.src; };
+    next.src = STAGES[i].i;
   }
 
+  /* Funciona igual en escritorio y en móvil: la etapa activa es la más
+     cercana a la línea de lectura, sea cual sea el ancho. */
   function update() {
     if (!list) return;
-    const narrow = window.matchMedia('(max-width: 959px)').matches;
-    if (narrow) { set(0); return; }
-    const vh = window.innerHeight;
+    const line = window.innerHeight * 0.45;
     let active = 0, best = Infinity;
     steps.forEach((s, i) => {
       const r = s.getBoundingClientRect();
-      const d = Math.abs(r.top + r.height / 2 - vh * 0.45);
+      const d = Math.abs(r.top + r.height / 2 - line);
       if (d < best) { best = d; active = i; }
     });
     set(active);
@@ -550,7 +580,9 @@ const Proc = (function () {
 
   function init() {
     if (!list) return;
-    set(0);
+    preload();
+    steps.forEach((s, k) => s.classList.toggle('is-on', k === 0));
+    last = 0;
     window.addEventListener('scroll', raf(update), { passive: true });
     window.addEventListener('resize', raf(update), { passive: true });
   }

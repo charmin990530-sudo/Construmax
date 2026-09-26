@@ -209,13 +209,15 @@ p{ text-wrap:pretty; }
 .navlink.is-on::after{ transform:scaleX(1); }
 
 .nav__end{ display:flex; align-items:center; gap:1.25rem; }
-.nav__end .navlink--cta{ display:none; }
-@media (min-width:940px){
-  .nav__end .navlink--cta{ display:inline-flex; align-items:center; gap:.4rem; color:var(--accent); }
-  .nav__burger{ display:none; }
-}
+/* Las reglas base van ANTES del media query: si no, gana la última
+   declarada y el burger se muestra también en escritorio. */
+.navlink--cta{ display:none; }
 .nav__burger{ display:flex; align-items:center; gap:.45rem; color:var(--ink); padding:.4rem 0; }
 .nav__burger:hover{ color:var(--accent); }
+@media (min-width:940px){
+  .navlink--cta{ display:inline-flex; align-items:center; gap:.4rem; color:var(--accent); }
+  .nav__burger{ display:none; }
+}
 
 /* Drawer móvil */
 .drawer{
@@ -351,7 +353,13 @@ p{ text-wrap:pretty; }
 .proc{ padding-bottom:var(--sec-y); }
 .proc__grid{ display:grid; gap:clamp(2rem,4vw,3.5rem); margin-top:clamp(2.5rem,5vw,4rem); }
 @media (min-width:960px){
-  .proc__grid{ grid-template-columns:1fr 1fr; align-items:start; }
+  /* Sin align-items:start la columna de la imagen se estiraría a la altura
+     de la lista, que es lo que le da espacio de viaje al sticky. Con
+     align-items:start el padre medía lo de la foto y la imagen se iba de
+     pantalla en los primeros 300px de scroll. */
+  .proc__grid{ grid-template-columns:1fr 1fr; }
+  .proc__stage img{ aspect-ratio:auto; height:min(42vh,360px); }
+  .step{ padding:2.4rem 0; }
 }
 .proc__media{ position:relative; }
 .proc__stage{ position:sticky; top:calc(var(--nav-h) + 1.5rem); }
@@ -622,19 +630,31 @@ p{ text-wrap:pretty; }
 /* =========================================================
    18. WHATSAPP
    ========================================================= */
+/* Colapsado a solo icono (48px) para no tapar texto; se despliega al hover.
+   Mantiene las esquinas vivas del sistema, sin radio. */
 .wa{
   position:fixed; z-index:88;
   right:clamp(1rem,2.5vw,2rem); bottom:clamp(1rem,2.5vw,2rem);
-  display:flex; align-items:center; gap:.5rem;
-  padding:.8rem 1.1rem; background:var(--ink); color:var(--paper);
-  font-size:.85rem; font-weight:500;
+  display:inline-flex; align-items:center;
+  height:48px; padding:0 15px; overflow:hidden;
+  background:var(--ink); color:var(--paper);
   transition:background var(--t-fast) var(--ease);
 }
-.wa:hover{ background:#2B2919; }
+.wa:hover,.wa:focus-visible{ background:var(--accent); }
+.wa__t{
+  font-size:.83rem; font-weight:500; white-space:nowrap;
+  max-width:0; opacity:0; overflow:hidden;
+  transition:max-width var(--t-mid) var(--ease), opacity var(--t-fast) var(--ease), margin var(--t-mid) var(--ease);
+}
+.wa:hover .wa__t,.wa:focus-visible .wa__t{ max-width:130px; opacity:1; margin-left:.6rem; }
+
+/* En Contacto el botón flotante es redundante (ya hay un CTA en la barra
+   lateral) y además tapaba la dirección. ahí no se muestra. */
+body.is-contacto .wa{ display:none; }
 
 .wa-panel{
   position:fixed; z-index:89;
-  right:clamp(1rem,2.5vw,2rem); bottom:calc(clamp(1rem,2.5vw,2rem) + 52px);
+  right:clamp(1rem,2.5vw,2rem); bottom:calc(clamp(1rem,2.5vw,2rem) + 60px);
   width:min(calc(100vw - 2rem),21rem);
   background:var(--paper); border:1px solid var(--ink);
   opacity:0; transform:translateY(8px); transform-origin:bottom right;
