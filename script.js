@@ -141,6 +141,10 @@ const Index = (function () {
     const host = $(target);
     if (!host) return;
     const items = list || DATA;
+    /* --cols tiene que vivir en el contenedor: antes solo estaba en la
+       cabecera, así que las filas caían a un grid de una columna y el
+       índice de la portada salía apilado bajo una cabecera de 6 columnas. */
+    host.style.setProperty('--cols', COLS);
     host.innerHTML = head() + (items.length
       ? items.map(row).join('')
       : '<div class="empty"><strong>Sin proyectos en esta categoría</strong><p>Estamos preparando nuevas opciones. Escríbenos y te avisamos cuando abramos cupos.</p></div>');
