@@ -110,22 +110,6 @@ const DATA = [
 
 const CAT = { residencial: 'Residencial', comercial: 'Comercial', planos: 'Sobre planos' };
 
-/* Imágenes del proceso constructivo */
-const STAGES = [
-  { t: 'Etapa 01 — Diseño y planos',
-    i: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200&auto=format&fit=crop',
-    a: 'Arquitecto revisando planos de estructura' },
-  { t: 'Etapa 02 — Cimentación',
-    i: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1200&auto=format&fit=crop',
-    a: 'Montaje de acero en obra' },
-  { t: 'Etapa 03 — Estructura y fachada',
-    i: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200&auto=format&fit=crop',
-    a: 'Grúas en obra de estructura' },
-  { t: 'Etapa 04 — Entrega de llaves',
-    i: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1200&auto=format&fit=crop',
-    a: 'Torres terminadas en el skyline de Bogotá' }
-];
-
 /* =========================================================
    ÍNDICE DE PROYECTOS
    ========================================================= */
@@ -197,14 +181,18 @@ const Index = (function () {
       return [nx, ny];
     }
 
+    /* El bucle solo corre mientras la vista previa está abierta: antes
+       seguía pedir frames indefinidamente, incluso sin cursor sobre la
+       página, y con la escena eso se nota. */
     function loop() {
       const [ax, ay] = place();
       cx += (ax - cx) * 0.18;
       cy += (ay - cy) * 0.18;
       box.style.transform = 'translate3d(' + cx.toFixed(1) + 'px,' + cy.toFixed(1) + 'px,0)';
-      rafId = requestAnimationFrame(loop);
+      rafId = on ? requestAnimationFrame(loop) : 0;
     }
-    function start() { if (!rafId) loop(); }
+    function start() { if (!rafId) rafId = requestAnimationFrame(loop); }
+    function stop() { if (rafId) { cancelAnimationFrame(rafId); rafId = 0; } }
 
     function show(src, name) {
       if (!box) return;
@@ -219,7 +207,9 @@ const Index = (function () {
     }
     function hide() {
       if (!box || !on) return;
-      box.classList.remove('is-on'); on = false;
+      on = false;
+      stop();
+      box.classList.remove('is-on');
       setTimeout(() => { if (!on) box.hidden = true; }, 400);
     }
 
@@ -379,7 +369,7 @@ const Router = (function () {
     if (main) main.focus({ preventScroll: true });
 
     Reveal.scan();
-    if (route.page === 'inicio') { Proc.refresh(); Counters.replay(); }
+    if (route.page === 'inicio') { Scrolly.refresh(); Counters.replay(); }
   }
 
   function init() {
@@ -539,72 +529,350 @@ const Counters = (function () {
 })();
 
 /* =========================================================
-   PROCESO — scroll que cambia la imagen de etapa
+   ESCENA DE CONSTRUCCIÓN
+   Una sola línea de tiempo maestra (GSAP + ScrollTrigger con
+   scrub) gobierna el cielo, la grúa, el terreno, los 56 pisos
+   y las luces. Los paneles de texto no se animan con tweens:
+   su posición en el flujo ya es la sincronía, y su fundido se
+   calcula con aritmética en el mismo onUpdate para no tener
+   un segundo trigger por etapa.
+
+   Todo el módulo se apaga solo si no hay GSAP, si el usuario
+   pide movimiento reducido o si la escena no está en el DOM.
    ========================================================= */
-const Proc = (function () {
-  const list = $('#procList'), img = $('#procImg'), tag = $('#procTag');
-  const steps = $$('.step');
-  let last = 0, token = 0;
+const Scrolly = (function () {
+  /* ---- Configuración. Para cambiar el ritmo o el color, se toca
+        solo aquí: SCROLLYTELLING.md documenta cada campo. ---- */
+  const CFG = {
+    /* Peso de cada etapa en la línea de tiempo. No tienen que sumar 1:
+       se normalizan. Estructura y Entrega pesan más porque son las
+       etapas que mas construyen. */
+    stages: [
+      { n: '01', name: 'Terreno',    w: 0.85 },
+      { n: '02', name: 'Excavación', w: 1.00 },
+      { n: '03', name: 'Cimientos',  w: 1.00 },
+      { n: '04', name: 'Estructura', w: 1.55 },
+      { n: '05', name: 'Envolvente', w: 1.25 },
+      { n: '06', name: 'Acabados',   w: 1.00 },
+      { n: '07', name: 'Entrega',    w: 1.35 }
+    ],
+    /* Cielo: pares [progreso 0-1, color]. Solo se usan los tokens de
+       marca, no hay ningún color nuevo en el sistema. */
+    sky: [[0, '#F2F0EA'], [0.14, '#E9E6DD'], [0.52, '#E9E6DD'],
+          [0.74, '#DCD8CC'], [0.88, '#3B392E'], [1, '#16150F']],
+    night: 0.90,   /* a partir de aquí la línea pasa a modo noche */
+    steps: 240,    /* granularidad del color del cielo: 240 pasos en toda
+                      la escena. Evita repintar el SVG en cada frame. */
+    /* Centro de lectura, como fracción de la altura visible. Tiene que
+       coincidir con la composición del CSS: en escritorio el panel ocupa
+       toda la altura; en móvil deja libre la lámina de arriba. */
+    read: { wide: 0.5, narrow: 0.68, bp: 900 }
+  };
 
-  /* Precalentamos las cuatro fotos: si no, el cambio se ve como un parpadeo */
-  function preload() {
-    STAGES.forEach((s) => { const im = new Image(); im.src = s.i; });
+  const body = $('#sceneBody'), paper = $('.scene__paper'), tw = $('.tw');
+  const panels = $$('#scenePanels .panel');
+  const bar = $('#sceneBar'), num = $('#stageNum'), name = $('#stageName');
+  const chapters = $$('.scene__chapters button');
+
+  let tl = null, mq = null, on = false;
+  let ctr = [];        /* centro de cada panel, en fracción del recorrido */
+  let tol = [];        /* tolerancia de su fundido */
+  let lastSky = -1, lastStage = -1, lastBar = -1, lastNight = null;
+  let lastP = [];
+
+  /* ---------- utilidades ---------- */
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const rgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const SKY = CFG.sky.map((s) => [s[0], rgb(s[1])]);
+
+  function skyAt(p) {
+    for (let i = 1; i < SKY.length; i++) {
+      if (p <= SKY[i][0] || i === SKY.length - 1) {
+        const a = SKY[i - 1], b = SKY[i];
+        const t = clamp((p - a[0]) / (b[0] - a[0] || 1), 0, 1);
+        return 'rgb(' + Math.round(a[1][0] + (b[1][0] - a[1][0]) * t) + ',' +
+                    Math.round(a[1][1] + (b[1][1] - a[1][1]) * t) + ',' +
+                    Math.round(a[1][2] + (b[1][2] - a[1][2]) * t) + ')';
+      }
+    }
+    return SKY[0][1];
   }
 
-  function set(i) {
-    if (i === last || !steps[i] || !img) return;
-    last = i;
-    steps.forEach((s, k) => s.classList.toggle('is-on', k === i));
-    if (tag) tag.textContent = STAGES[i].t;
-    img.alt = STAGES[i].a;
-    /* Solo cambiamos el src cuando la foto ya está en caché */
-    const next = new Image();
-    const mine = ++token;
-    next.onload = next.onerror = () => { if (mine === token) img.src = next.src; };
-    next.src = STAGES[i].i;
-  }
+  /* Un único escritura de estilo por elemento y por paso: se compara
+     contra el valor anterior cuantizado. */
+  function quant(v, q) { return Math.round(v * q) / q; }
 
-  /* Funciona igual en escritorio y en móvil: la etapa activa es la más
-     cercana a la línea de lectura, sea cual sea el ancho. */
-  function update() {
-    if (!list) return;
-    const line = window.innerHeight * 0.45;
-    let active = 0, best = Infinity;
-    steps.forEach((s, i) => {
-      const r = s.getBoundingClientRect();
-      const d = Math.abs(r.top + r.height / 2 - line);
-      if (d < best) { best = d; active = i; }
+  /* ---------- construcción de la línea de tiempo ---------- */
+  function build() {
+    const g = window.gsap;
+    const total = CFG.stages.reduce((a, s) => a + s.w, 0);
+    /* at[k] = instante normalizado (0-1) en el que arranca la etapa k.
+       at[n] = 1 cierra la línea: nada puede pasar de ahí. */
+    const at = [];
+    let acc = 0;
+    CFG.stages.forEach((s) => { at.push(acc / total); acc += s.w; });
+    at.push(1);
+    const seg = (k, f) => (at[k + 1] - at[k]) * f;
+
+    const E = g.utils.selector(tw);
+    /* Los pisos se ordenan por altura para que el encofrado suba como
+       una grúa real, torre a torre y no torre por torre. */
+    const floors = $$('.fl', tw).sort((a, b) =>
+      parseFloat(a.firstElementChild.getAttribute('y')) - parseFloat(b.firstElementChild.getAttribute('y')));
+    const glass = $$('.fl__gh', tw);
+    const brick = $$('.fl__br', tw);
+    const lamps = $$('.fl__w', tw).sort((a, b) => a.dataset.o - b.dataset.o);
+    const warm = (el) => el.classList.contains('is-warm');
+
+    tl = g.timeline({
+      paused: true,
+      defaults: { ease: 'none' },
+      scrollTrigger: {
+        trigger: body,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 0.55,
+        invalidateOnRefresh: true,
+        onRefresh: measure
+      }
     });
-    set(active);
+
+    /* --- Etapa 01 · Terreno: la lámina se presenta sola --- */
+    tl.fromTo(E('.tw-dims'), { opacity: 0 }, { opacity: 1, duration: seg(0, 0.85) }, at[0])
+      .fromTo(E('.sk-sun'), { opacity: 0, y: -60 }, { opacity: 0.38, y: 0, duration: seg(0, 1) + seg(1, 1) }, at[0]);
+
+    /* --- Etapa 02 · Excavación --- */
+    tl.fromTo(E('.tw-pit'), { opacity: 0 }, { opacity: 1, duration: 0.1 }, at[1])
+      .fromTo(E('.tw-pitv'), { scaleY: 0, svgOrigin: '325 542' }, { scaleY: 1, duration: seg(1, 0.6) }, at[1])
+      .fromTo(E('.tw-work'), { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: seg(1, 0.4) }, at[1] + seg(1, 0.15))
+      .to(E('.wk-m'), { opacity: 0.55, duration: 0.15, stagger: 0.02 }, at[1] + seg(1, 0.4));
+
+    /* --- Etapa 03 · Cimientos: acero, encofrado y placa --- */
+    tl.fromTo(E('.tw-rebar'), { opacity: 0 }, { opacity: 1, duration: seg(2, 0.35), stagger: 0.012 }, at[2])
+      .fromTo(E('.tw-found'), { opacity: 0 }, { opacity: 1, duration: 0.15 }, at[2] + seg(2, 0.15))
+      .fromTo(E('.tw-fstem'), { scaleY: 0, svgOrigin: '335 610' }, { scaleY: 1, duration: seg(2, 0.45) }, at[2] + seg(2, 0.2))
+      .fromTo(E('.tw-fslab'), { scaleX: 0, svgOrigin: '313 540' }, { scaleX: 1, duration: seg(2, 0.45) }, at[2] + seg(2, 0.45));
+
+    /* --- Etapa 04 · Estructura: la grúa llega y los pisos suben --- */
+    const g3 = seg(3, 0.75);                      /* Margen para la grúa */
+    tl.fromTo(E('.tw-crane'), { opacity: 0 }, { opacity: 1, duration: 0.1 }, at[3])
+      .fromTo(E('.cn-mast'), { scaleY: 0, svgOrigin: '706 540' }, { scaleY: 1, duration: g3 * 0.4 }, at[3] + 0.02)
+      .fromTo(floors, { opacity: 0, y: 5 },
+        { opacity: 1, y: 0, duration: 0.06, stagger: { each: g3 / floors.length } }, at[3] + g3 * 0.18)
+      .fromTo(E('.cn-jib'), { rotation: -9, svgOrigin: '706 196' },
+        { rotation: 7, duration: g3, ease: 'sine.inOut', yoyo: true, repeat: 1 }, at[3] + 0.02)
+      .fromTo(E('.cn-hook'), { y: 0 },
+        { y: -46, duration: g3 / 2, ease: 'sine.inOut', yoyo: true, repeat: 1 }, at[3] + 0.04)
+      .to(E('.tw-work'), { opacity: 0, duration: 0.15 }, at[3]);
+
+    /* --- Etapa 05 · Envolvente: ladrillo, vidrio y andamios --- */
+    const g4 = seg(4, 0.8);
+    tl.fromTo(brick, { opacity: 0 }, { opacity: 1, duration: 0.06, stagger: { each: g4 / brick.length } }, at[4])
+      .fromTo(glass, { opacity: 0 }, { opacity: 1, duration: 0.06, stagger: { each: g4 / glass.length } }, at[4])
+      .fromTo(lamps, { opacity: 0 }, { opacity: (i, el) => (warm(el) ? 0.1 : 0.08), duration: 0.05,
+        stagger: { each: g4 / lamps.length } }, at[4])
+      .fromTo(E('.tw-scaf'), { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.25 }, at[4] + seg(4, 0.1));
+
+    /* --- Etapa 06 · Acabados: se desmonta el andamio, se corona la obra --- */
+    tl.to(E('.tw-scaf'), { opacity: 0, x: 12, duration: seg(5, 0.3) }, at[5])
+      .to(E('.cn-load'), { opacity: 0, duration: 0.1 }, at[5])
+      .fromTo(E('.tw-crown'), { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: seg(5, 0.5) }, at[5] + seg(5, 0.15))
+      .to(E('.cn-mast'), { scaleY: 0.35, svgOrigin: '706 540', duration: seg(5, 0.55) }, at[5] + seg(5, 0.35));
+
+    /* --- Etapa 07 · Entrega: atardecer, luces y apagado de obra --- */
+    const g6 = seg(6, 1);
+    tl.to(E('.tw-crane'), { opacity: 0, duration: g6 * 0.2 }, at[6] + g6 * 0.05)
+      .to(E('.sk-sun'), { y: 300, opacity: 0, duration: g6 * 0.75 }, at[6] - g6 * 0.1)
+      .fromTo(E('.sk-band'), { scaleY: 0.2, opacity: 0 },
+        { scaleY: 1, opacity: 0.9, duration: g6 * 0.3, yoyo: true, repeat: 1 }, at[6] - g6 * 0.05)
+      .to(lamps, { opacity: (i, el) => (warm(el) ? 0.95 : 0.9), duration: 0.05,
+        stagger: { each: g6 * 0.55 / lamps.length } }, at[6] - g6 * 0.05)
+      .to(E('.ct-b'), { opacity: 0.13, duration: g6 * 0.4 }, at[6]);
+
+    /* Parallax: el fondo y las nubes se mueven distinto al primer plano */
+    tl.fromTo(E('.tw-city'), { y: -6 }, { y: 12, duration: 1 }, 0)
+      .fromTo(E('.cl'), { x: 0 }, { x: (i, el) => -46 * Number(el.dataset.d), duration: 1 }, 0);
+
+    /* Cierra la línea en 1 para que tl.progress() sea directamente el
+       progreso del scroll, sin tener que normalizar a mano. */
+    tl.set(E('.tw-dims'), { opacity: 1 }, 1);
+
+    /* El pintado va en el onUpdate de la línea de tiempo, no en el del
+       trigger: con scrub el trigger solo se dispara al mover el scroll,
+       y el contador se quedaría congelado mientras la escena alcanza su
+       posición. El tween de scrub sí avisa en cada paso, incluida la
+       puesta al día final. */
+    tl.eventCallback('onUpdate', paint);
+
+    return at;
+  }
+
+  /* Posición de cada panel dentro del recorrido, en fracción del alto
+     total de la escena. Se recalcula en cada refresh (resize, cambio de
+     ruta, giro de pantalla). Con esto el fundido de un panel depende
+     solo de cuán lejos está su centro de la línea de lectura: al
+     empezar y al terminar la escena el primer y el último panel salen
+     totalmente opacos, sin trucos. */
+  function measure() {
+    if (!body) return;
+    const A = Math.max(body.offsetHeight, 1);
+    const top = body.getBoundingClientRect().top;
+    ctr = panels.map((p) => {
+      const r = p.getBoundingClientRect();
+      return { c: ((r.top - top) + r.height / 2) / A, h: r.height / A };
+    });
+    tol = ctr.map((c) => c.h * 0.5 + 0.05);
+  }
+
+  /* Un solo paso por frame: cielo, paneles, contador y barra. */
+  function paint() {
+    const p = tl ? tl.progress() : 0;
+    const A = Math.max(body.offsetHeight, 1);
+    const V = window.innerHeight;
+    const span = Math.max(A - V, 1);
+    const vc = (p * span + V * (window.innerWidth >= CFG.read.bp ? CFG.read.wide : CFG.read.narrow)) / A;
+
+    /* Cielo: 240 pasos en toda la escena, no 60 escrituras por segundo */
+    const q = Math.round(p * CFG.steps);
+    if (q !== lastSky) {
+      lastSky = q;
+      paper.style.setProperty('--sky', skyAt(q / CFG.steps));
+    }
+
+    /* La línea pasa a modo noche una sola vez: a partir de ahí el CSS
+       lleva la tinta del edificio de oscuro a claro con su transición. */
+    if (lastNight === null || p >= CFG.night !== lastNight) {
+      lastNight = p >= CFG.night;
+      setNight(lastNight);
+    }
+
+    /* Paneles: entrada y salida con aritmética, sin tweens ni triggers.
+       El contador de etapa sale de aquí y no de los pesos del timeline:
+       así el rótulo "Etapa 04" y el panel que se está leyendo siempre
+       coinciden, aunque se cambien las alturas o los pesos. */
+    let best = 0, bestD = Infinity;
+    for (let i = 0; i < panels.length; i++) {
+      if (!ctr[i]) continue;
+      const e = ctr[i].c - vc;                       /* >0: el panel aún no ha llegado */
+      if (Math.abs(e) < bestD) { bestD = Math.abs(e); best = i; }
+      const f = clamp(1 - Math.abs(e) / tol[i], 0, 1);
+      const o = quant(f * f * (3 - 2 * f), 200);    /* smoothstep: sin cortes */
+      const y = quant(clamp(e, -1.4, 1.4) * 90, 24);
+      if (lastP[i] === o && lastP[i + 1] === y) continue;
+      lastP[i] = o; lastP[i + 1] = y;
+      panels[i].style.opacity = o;
+      panels[i].style.transform = 'translate3d(0,' + y.toFixed(2) + 'px,0)';
+    }
+
+    /* Contador de etapa: el panel que está en la línea de lectura */
+    if (best !== lastStage) {
+      lastStage = best;
+      const st = CFG.stages[best];
+      if (num) num.textContent = st.n;
+      if (name) name.textContent = st.name;
+      chapters.forEach((b, i) => {
+        if (i === best) b.setAttribute('aria-current', 'true');
+        else b.removeAttribute('aria-current');
+      });
+    }
+
+    /* Barra de avance de la escena */
+    const b = Math.round(p * 200);
+    if (b !== lastBar) {
+      lastBar = b;
+      if (bar) bar.style.transform = 'scaleX(' + (b / 200).toFixed(3) + ')';
+    }
+  }
+
+  function setNight(on) {
+    if (tw) tw.classList.toggle('is-night', on);
+  }
+
+  function start() {
+    if (on || !body || !tw) return;
+    if (!window.gsap || !window.ScrollTrigger) return;   /* sin GSAP: lámina estática */
+    window.gsap.registerPlugin(window.ScrollTrigger);
+    window.ScrollTrigger.config({ ignoreMobileResize: true });
+    build();
+    setNight(false);
+    measure();
+    on = true;
+    document.documentElement.classList.add('st-ready');
+  }
+
+  function stop() {
+    if (!on) return;
+    if (tl) { tl.scrollTrigger.kill(); tl.kill(); tl = null; }
+    on = false;
+    panels.forEach((p) => { p.style.opacity = ''; p.style.transform = ''; });
+    document.documentElement.classList.remove('st-ready');
+    if (paper) paper.style.removeProperty('--sky');
+    setNight(true);
+    lastSky = lastStage = lastBar = -1; lastP = [];
+  }
+
+  /* Si la preferencia de movimiento cambia con la página abierta, la
+     escena se desarma sin recargar. */
+  function watchMotion() {
+    if (!window.matchMedia) return;
+    mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const apply = () => {
+      const d = document.documentElement;
+      if (mq.matches) { d.classList.remove('st'); stop(); }
+      else { d.classList.add('st'); start(); }
+    };
+    if (mq.addEventListener) mq.addEventListener('change', apply);
+  }
+
+  function bindChapters() {
+    chapters.forEach((b) => {
+      b.addEventListener('click', () => {
+        const p = panels[Number(b.dataset.go)];
+        if (!p) return;
+        p.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      });
+    });
   }
 
   function init() {
-    if (!list) return;
-    preload();
-    steps.forEach((s, k) => s.classList.toggle('is-on', k === 0));
-    last = 0;
-    window.addEventListener('scroll', raf(update), { passive: true });
-    window.addEventListener('resize', raf(update), { passive: true });
+    if (!body || !panels.length) return;
+    bindChapters();
+    watchMotion();
+    const d = document.documentElement;
+    if (!mq || !mq.matches) { d.classList.add('st'); start(); }
+    else setNight(true);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => { if (on) measure(); }, 260);
+    });
   }
 
-  function refresh() { setTimeout(update, 60); }
+  function refresh() { if (on) window.ScrollTrigger.refresh(); }
 
-  return { init, refresh };
+  return { init, refresh, on: () => on };
 })();
 
 /* =========================================================
    NAV / PROGRESO / IMÁGENES ROTOS
    ========================================================= */
 const Chrome = (function () {
+  /* El alto del documento se cachea: leerlo en cada frame obligaba al
+     navegador a recalcular la página entera, y con la escena el documento
+     mide siete pantallas más que antes. */
   function initBar() {
     const bar = $('#scrollBar');
     if (!bar) return;
+    let max = 0;
+    const measure = () => {
+      const d = document.documentElement;
+      max = (d.scrollHeight - d.clientHeight) || 1;
+    };
     const on = raf(() => {
       const d = document.documentElement;
-      const max = (d.scrollHeight - d.clientHeight) || 1;
       bar.style.transform = 'scaleX(' + Math.min(Math.max(d.scrollTop / max, 0), 1) + ')';
     });
     window.addEventListener('scroll', on, { passive: true });
+    window.addEventListener('resize', raf(() => { measure(); on(); }), { passive: true });
+    measure();
     on();
   }
 
@@ -631,14 +899,6 @@ const Chrome = (function () {
   function initMisc() {
     const y = $('#year');
     if (y) y.textContent = new Date().getFullYear();
-    /* Flechas de "ir al proceso" */
-    document.addEventListener('click', (e) => {
-      const t = e.target.closest('[data-scroll-next]');
-      if (!t) return;
-      e.preventDefault();
-      const p = $('#proc');
-      if (p) p.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
-    });
   }
 
   function init() { initBar(); initNav(); initImgGuard(); initMisc(); }
@@ -732,8 +992,8 @@ document.addEventListener('DOMContentLoaded', function () {
   Chrome.init();
   Drawer.init();
   WA.init();
-  Proc.init();
   Form.init();
+  Scrolly.init();
   Counters.init();
   Reveal.scan();
   Router.init();
