@@ -137,8 +137,10 @@ p{ text-wrap:pretty; }
 /* =========================================================
    4. REVEAL — discreto, sin rebote
    ========================================================= */
-.reveal{ opacity:0; transform:translateY(14px); transition:opacity var(--t-slow) var(--ease), transform var(--t-slow) var(--ease); }
-.reveal.in-view{ opacity:1; transform:none; }
+/* Solo se oculta si hay JavaScript: sin él, nada puede poner .in-view
+   y el contenido se quedaría invisible para siempre. */
+.js .reveal{ opacity:0; transform:translateY(14px); transition:opacity var(--t-slow) var(--ease), transform var(--t-slow) var(--ease); }
+.js .reveal.in-view{ opacity:1; transform:none; }
 .stagger.in-view > *{ animation:rise .6s var(--ease) both; }
 .stagger.in-view > *:nth-child(1){ animation-delay:.05s; }
 .stagger.in-view > *:nth-child(2){ animation-delay:.12s; }
@@ -337,63 +339,233 @@ p{ text-wrap:pretty; }
 /* =========================================================
    9. MANIFIESTO
    ========================================================= */
-.pull{ padding-block:clamp(5rem,13vw,11rem); }
-.pull__txt{
-  font-family:var(--f-display);
-  font-size:clamp(2.1rem,6.5vw,5.5rem);
-  line-height:1.02; color:var(--ink); max-width:16ch;
-  display:flex; flex-direction:column; gap:1.4rem;
-}
-.pull__txt em{ font-style:italic; color:var(--accent); }
-.pull__note{ color:var(--ink-3); margin-top:.5rem; }
+/* El manifiesto vive ahora dentro de la Etapa 06 de la escena
+   (rejilla de .panel__claim). No queda ninguna sección .pull. */
 
 /* =========================================================
-   10. PROCESO
+   10. ESCENA DE CONSTRUCCIÓN
    ========================================================= */
-.proc{ padding-bottom:var(--sec-y); }
-.proc__grid{ display:grid; gap:clamp(2rem,4vw,3.5rem); margin-top:clamp(2.5rem,5vw,4rem); }
-@media (min-width:960px){
-  /* Sin align-items:start la columna de la imagen se estiraría a la altura
-     de la lista, que es lo que le da espacio de viaje al sticky. Con
-     align-items:start el padre medía lo de la foto y la imagen se iba de
-     pantalla en los primeros 300px de scroll. */
-  .proc__grid{ grid-template-columns:1fr 1fr; }
-  .proc__stage img{ aspect-ratio:auto; height:min(42vh,360px); }
-  .step{ padding:2.4rem 0; }
+
+/* Los colores de la lámina se interpolan entre dos puntos: si el
+   navegador no soporta @property, el salto al atardecer es seco
+   pero el resto de la escena funciona igual. */
+@property --line{ syntax:'<color>'; inherits:true; initial-value:#16150F; }
+@property --lamp{ syntax:'<color>'; inherits:true; initial-value:#3B392E; }
+@property --sil { syntax:'<color>'; inherits:true; initial-value:#6C6858; }
+@property --sky { syntax:'<color>'; inherits:true; initial-value:#E9E6DD; }
+
+.scene{ padding-top:clamp(1rem,3vw,2rem); }
+.scene__body{ width:100%; max-width:var(--shell); margin-inline:auto; padding-inline:var(--pad); }
+.scene__intro{ padding-block:clamp(2.5rem,6vw,5rem) clamp(2rem,4vw,3.5rem); }
+.scene__intro .shell{ display:grid; gap:.35rem; }
+.scene__lead{ color:var(--ink-3); max-width:44ch; font-size:.95rem; margin-top:1.2rem; }
+
+/* Estado por defecto (sin JS o con prefers-reduced-motion): una lámina
+   estática con la obra terminada y los paneles en columna. */
+.scene__body{ display:block; }
+.scene__viewport{ position:static; margin-bottom:var(--sec-y); }
+.scene__paper{ position:relative; background:var(--sky); border:1px solid var(--rule); }
+/* Sin animación la lámina es una lámina: tamaño de hoja, no de columna. */
+.scene__paper{ max-width:30rem; margin-inline:auto; }
+.scene__sky{ position:absolute; inset:0; background:var(--sky); }
+.scene__paper .tw{ display:block; position:relative; width:100%; aspect-ratio:700/900; }
+.scene__hud,.scene__chapters{ display:none; }
+.scene__panels{ display:grid; }
+.panel{ padding-block:clamp(1.6rem,3vw,2.6rem); border-top:1px solid var(--rule); }
+.panel:first-child{ border-top:1px solid var(--ink); }
+.panel__t{ font-size:clamp(1.5rem,2.8vw,2.3rem); margin:.7rem 0 .6rem; }
+.panel__d{ max-width:52ch; }
+.panel__fig{ margin-top:1.6rem; }
+.panel__fig img{ width:100%; aspect-ratio:4/3; object-fit:cover; border:1px solid var(--rule); }
+.panel__claim{
+  font-family:var(--f-display); font-size:clamp(1.6rem,4vw,3rem);
+  line-height:1.12; color:var(--ink); max-width:22ch; margin-top:1rem;
 }
-.proc__media{ position:relative; }
-.proc__stage{ position:sticky; top:calc(var(--nav-h) + 1.5rem); }
-.proc__stage img{
-  width:100%; aspect-ratio:4/3; object-fit:cover;
+.panel__claim em{ font-style:italic; color:var(--accent); }
+.panel__note{ color:var(--ink-3); margin-top:1.4rem; }
+.panel__big{ font-size:clamp(1.9rem,4.4vw,3.2rem); line-height:1.04; margin:1rem 0 .9rem; }
+.panel__k2{ margin-top:clamp(2rem,5vw,3.5rem); }
+.panel__btns{ display:flex; flex-wrap:wrap; gap:.75rem; margin-top:1.8rem; }
+.panel--end .facts{ margin-top:0; }
+@media (min-width:560px){ .panel--end .facts__in{ grid-template-columns:repeat(3,1fr); } }
+@media (min-width:560px) and (max-width:899px){ .panel--end .facts__in{ grid-template-columns:repeat(2,1fr); } }
+
+/* ---- Versión ligada al scroll -------------------------------- */
+html.st:not(.st-ready) .scene{ opacity:0; }
+.scene{ transition:opacity .35s var(--ease); }
+
+@media (min-width:900px){
+  html.st .scene__body{
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);
+    column-gap:clamp(2rem,4vw,4.5rem);
+  }
+  html.st .scene__viewport{
+    grid-column:2; grid-row:1; align-self:start;
+    position:sticky; top:var(--nav-h);
+    height:calc(100dvh - var(--nav-h));
+  }
+  html.st .scene__panels{ grid-column:1; grid-row:1; }
+  html.st .scene__paper{ position:absolute; inset:0; }
+  html.st .scene__paper .tw{ height:100%; aspect-ratio:auto; }
+  html.st .panel{
+    min-height:var(--panel-h);
+    display:flex; flex-direction:column; justify-content:center;
+    padding-block:clamp(3rem,6vw,5rem);
+    will-change:opacity,transform;
+  }
+  html.st .panel{ scroll-margin-top:var(--nav-h); }
+}
+@media (max-width:899px){
+  html.st .scene__viewport{
+    position:sticky; top:var(--nav-h); z-index:1;
+    height:var(--scene-h); margin-bottom:0;
+  }
+  html.st .scene__paper{ position:absolute; inset:0; }
+  html.st .scene__paper .tw{ height:100%; aspect-ratio:auto; }
+  html.st .panel{
+    min-height:var(--panel-h);
+    display:flex; flex-direction:column; justify-content:flex-start;
+    padding-top:clamp(1.5rem,4vw,2.5rem);
+    will-change:opacity,transform;
+    scroll-margin-top:calc(var(--nav-h) + var(--scene-h));
+  }
+}
+html.st .panel:first-child{ padding-top:0; }
+
+:root{
+  /* Etapas: 7 paneles de alto completo. Se ajusta aquí y en nada más. */
+  --panel-h:100dvh;
+  --scene-h:40dvh;
+}
+@media (max-width:1199px) and (min-width:900px){ :root{ --panel-h:86dvh; } }
+@media (max-width:899px){ :root{ --panel-h:56dvh; --scene-h:40dvh; } }
+@media (max-width:520px){ :root{ --panel-h:50dvh; } }
+
+/* Las fichas conservan su ancho de lectura en la columna estrecha */
+@media (min-width:900px){
+  html.st .panel > *{ max-width:34rem; }
+  html.st .panel__fig{ max-width:34rem; }
+}
+
+/* ---- HUD: contador de etapa y avance ---- */
+html.st .scene__hud{ display:flex; }
+html.st .scene__chapters{ display:block; }
+
+/* Cartela de la lámina, como el recuadro de un plano. Lleva fondo de papel
+   porque el cielo pasa de claro a ink: sin él el contador se perdía en el
+   atardecer. Se retira de la derecha lo que ocupa el botón de WhatsApp. */
+.scene__hud{
+  position:absolute; bottom:3.5rem;
+  left:0; right:0;
+  margin-inline:clamp(4.5rem,6.5vw,5.5rem) 0;
+  align-items:center; gap:clamp(.8rem,2vw,1.4rem);
+  padding:.6rem clamp(.9rem,2.5vw,1.6rem);
+  background:var(--paper);
   border:1px solid var(--rule);
 }
-.proc__tag{
-  position:absolute; left:0; bottom:-1.85rem; color:var(--accent);
+.scene__read{
+  display:flex; align-items:baseline; gap:.28rem;
+  font-family:var(--f-mono); font-size:.68rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink); white-space:nowrap;
 }
-/* En móvil el bloque de imagen se ancla arriba y la lista fluye bajo él */
-@media (max-width:959px){
-  .proc__media{
-    position:sticky; top:var(--nav-h); z-index:2;
-    background:var(--paper); padding-bottom:.7rem;
-  }
-  .proc__stage{ position:static; }
-  .proc__stage img{ aspect-ratio:16/9; max-height:38vh; }
-  .proc__tag{ position:static; display:block; margin-top:.55rem; }
+.scene__read i{ font-style:normal; color:var(--ink-3); }
+.scene__read b{ font-weight:400; color:var(--ink); margin-left:.5rem; }
+.scene__track{ flex:1; height:1px; background:var(--rule-mid); }
+.scene__track span{
+  display:block; height:100%; background:var(--accent);
+  transform:scaleX(0); transform-origin:left;
 }
-.proc__list{ display:grid; gap:0; }
-.step{
-  padding:1.6rem 0; border-top:1px solid var(--rule);
-  transition:opacity var(--t-mid) var(--ease);
+.scene__tot{ color:var(--ink-3); }
+
+/* ---- Navegación por capítulos ---- */
+.scene__chapters{
+  position:absolute; left:0; right:0; bottom:0;
+  padding-left:clamp(4.5rem,6.5vw,5.5rem);
+  background:var(--paper);
+  border-top:1px solid var(--rule);
 }
-.step:last-child{ border-bottom:1px solid var(--rule); }
-.step__n{ display:block; color:var(--accent); margin-bottom:.55rem; }
-.step__t{ font-size:clamp(1.4rem,2.6vw,2.1rem); margin-bottom:.5rem; }
-.step__d{ color:var(--ink-2); font-size:.95rem; max-width:46ch; }
-@media (min-width:960px){
-  .step{ opacity:.32; }
-  .step.is-on{ opacity:1; }
-  .step.is-on .step__t{ color:var(--ink); }
+.scene__chapters ol{ display:grid; grid-template-columns:repeat(7,1fr); }
+.scene__chapters button{
+  display:flex; align-items:baseline; gap:.45rem; width:100%; min-width:0;
+  padding:.7rem clamp(.5rem,1.6vw,1rem); text-align:left;
+  border-right:1px solid var(--rule);
+  color:var(--ink-3); font-size:.72rem;
+  transition:color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
 }
+.scene__chapters button:last-child{ border-right:0; }
+.scene__chapters button span:last-child{ display:none; }
+.scene__chapters .mono{ font-size:.62rem; }
+/* A partir de aquí cabe el nombre de la etapa, pero solo si va en dos
+   líneas: en una sola no cabe en una séptima parte de la columna. */
+@media (min-width:1180px){
+  .scene__chapters button{ flex-direction:column; align-items:flex-start; gap:.2rem; }
+  .scene__chapters button span:last-child{ display:block; font-size:.62rem; line-height:1.1; white-space:nowrap; }
+  .scene__chapters button[aria-current="true"]{ color:var(--ink); background:rgba(22,21,15,.05); }
+}
+.scene__chapters button:hover{ color:var(--ink); }
+.scene__chapters button[aria-current="true"] .mono{ color:var(--accent); }
+
+/* ---- La lámina ---- */
+.scene__paper{ --sky:#16150F; transition:--sky .16s linear; }
+html.st .scene__paper{ --sky:#F2F0EA; }
+.tw{ --line:var(--ink); --lamp:var(--ink-2); --sil:var(--ink-3); }
+.tw.is-night{ --line:var(--paper); --lamp:var(--paper); --sil:var(--ink-2); }
+html:not(.st) .tw{ --line:var(--paper); --lamp:var(--paper); --sil:var(--ink-2); }
+.tw{ transition:--line .5s var(--ease), --lamp .5s var(--ease), --sil .5s var(--ease); }
+
+.sk-band{ fill:var(--accent); opacity:0; transform:scaleY(.2); transform-box:fill-box; transform-origin:bottom; }
+.sk-sun{ fill:var(--accent-ink); opacity:0; }
+.cl-a,.cl-b{ fill:var(--line); opacity:.16; }
+.ct-b{ fill:var(--line); opacity:.07; }
+.ct-bb{ fill:var(--line); opacity:.12; }
+.ms-b{ fill:var(--line); fill-opacity:.085; stroke:var(--line); stroke-width:1.6; }
+.is-night .ms-b{ fill-opacity:0; stroke-opacity:0; }
+.tw-soil{ fill:var(--line); opacity:.05; }
+.tw-ground{ stroke:var(--line); stroke-width:2; }
+.tw-pitv{ fill:var(--sky); opacity:.9; }
+.tw-pitl,.tw-pitr,.tw-pitb{ stroke:var(--line); stroke-width:1.2; }
+.tw-bar{ stroke:var(--sil); stroke-width:1; }
+.tw-fslab{ fill:var(--line); opacity:.24; }
+.tw-fstem{ fill:var(--line); opacity:.07; }
+.px-l{ stroke:var(--line); stroke-width:.7; opacity:.18; }
+.px-l2{ opacity:.2; }
+.fl__sl{ fill:var(--line); opacity:.4; }
+.fl__gh{ fill:var(--line); opacity:.16; }
+.fl__br{ stroke:none; }
+.fl__w{ fill:var(--lamp); opacity:.08; }
+.fl__w.is-warm{ fill:var(--accent); opacity:.1; }
+.sf-h,.sf-v{ stroke:var(--sil); stroke-width:1; opacity:.45; }
+.cr-corn,.cr-tank{ fill:var(--line); opacity:.24; }
+.cr-ant{ stroke:var(--line); stroke-width:2; }
+.cr-podium{ fill:var(--line); opacity:.24; }
+.cr-park{ opacity:.3; }
+.cn-m{ fill:none; stroke:var(--line); stroke-width:1.6; opacity:.45; }
+.cn-tie{ stroke:var(--line); stroke-width:.8; opacity:.28; }
+.cn-j,.cn-c,.cn-tr,.cn-load{ fill:var(--line); opacity:.4; }
+.cn-t,.cn-cab{ stroke:var(--line); stroke-width:1.4; opacity:.45; }
+.wk-b1,.wk-t1,.wk-t2,.wk-b3{ fill:var(--sil); }
+.wk-b2{ stroke:var(--sil); stroke-width:4; }
+.wk-w{ fill:var(--sil); }
+.wk-h{ fill:var(--accent); }
+.wk-b,.wk-l{ stroke:var(--sil); stroke-width:2.4; }
+.dm-l,.dm-c{ stroke:var(--line); stroke-width:.8; opacity:.32; }
+.dm-t{ fill:var(--line); opacity:.5; font-family:var(--f-mono); font-size:9px; }
+@media (max-width:760px){ .tw-dims{ display:none; } }
+
+/* Estado inicial de la versión animada: la obra aún no empieza.
+   El CSS por defecto (arriba) es el de la obra terminada, así que si
+   GSAP no carga, la lámina se ve entera y los paneles, legibles. */
+.tw-pit,
+.tw-rebar,
+.tw-found,
+.tw-work,
+.tw-scaf,
+.tw-crane{ opacity:0; }
+html:not(.st) .fl__w{ opacity:.9; }
+html:not(.st) .fl__w.is-warm{ opacity:.95; }
+html.st .tw-crown,
+html.st .fl,
+html.st .fl__w{ opacity:0; }
 
 /* =========================================================
    11. ÍNDICE DE PROYECTOS — la pieza editorial central
@@ -440,7 +612,6 @@ p{ text-wrap:pretty; }
 .idx__more{ margin-top:2.5rem; }
 
 .idx--full{ --cols: 3.5rem minmax(0,1fr) 12rem 7rem 11rem 3rem; }
-.idx--compact{ --cols: 3rem minmax(0,1fr) 9rem 6rem 10rem 2.5rem; }
 
 /* Vista previa flotante */
 .peek{
@@ -514,15 +685,8 @@ p{ text-wrap:pretty; }
 /* =========================================================
    14. CTA
    ========================================================= */
-.cta{
-  display:grid; gap:2.5rem; padding-block:clamp(3rem,7vw,5.5rem);
-  border-top:1px solid var(--ink);
-}
-@media (min-width:900px){ .cta{ grid-template-columns:1fr 1.1fr; align-items:end; } }
-.cta__title{ font-size:clamp(2.1rem,5.5vw,4.2rem); line-height:1; margin-top:1.1rem; }
-.cta__end{ display:grid; gap:1.6rem; }
-.cta__txt{ max-width:44ch; }
-.cta__btns{ display:flex; flex-wrap:wrap; gap:.75rem; }
+/* El bloque de contacto vive dentro de la Etapa 07 de la escena
+   (rejilla .panel--end). Ya no queda ninguna sección .cta suelta. */
 
 /* =========================================================
    15. FICHA DE PROYECTO
@@ -699,10 +863,18 @@ body.is-contacto .wa{ display:none; }
     animation-duration:.001ms !important; animation-iteration-count:1 !important;
     transition-duration:.001ms !important;
   }
-  .reveal{ opacity:1 !important; transform:none !important; }
+  .js .reveal{ opacity:1 !important; transform:none !important; }
   .hero__title .ln > span{ transform:none !important; }
-  .step{ opacity:1 !important; }
   .peek{ display:none !important; }
+  /* La escena se queda en su lámina estática: el script inline del <head>
+     no añade .st cuando hay movimiento reducido, así que aquí no hay nada
+     que deshacer. Estas reglas cubren el caso de cambiar la preferencia
+     con la página abierta. */
+  html.st .scene{ opacity:1 !important; }
+  html.st .scene__body{ display:block !important; }
+  html.st .scene__viewport{ position:static !important; height:auto !important; margin-bottom:var(--sec-y) !important; }
+  html.st .scene__hud,html.st .scene__chapters{ display:none !important; }
+  html.st .panel{ min-height:0 !important; opacity:1 !important; transform:none !important; padding-top:0 !important; }
 }
 
 @media (prefers-contrast:more){
@@ -710,8 +882,12 @@ body.is-contacto .wa{ display:none; }
 }
 
 @media print{
-  .nav,.progress,.wa,.wa-panel,.drawer,.peek,.skip{ display:none !important; }
+  .nav,.progress,.wa,.wa-panel,.drawer,.peek,.skip,.scene__chapters,.scene__hud{ display:none !important; }
   body{ background:#fff; }
   .page[hidden]{ display:block !important; }
-  .reveal{ opacity:1 !important; transform:none !important; }
+  .js .reveal{ opacity:1 !important; transform:none !important; }
+  /* En papel la escena es la lámina estática y los paneles, texto normal */
+  html.st .scene__body{ display:block !important; }
+  html.st .scene__viewport{ position:static !important; height:auto !important; }
+  html.st .panel{ min-height:0 !important; opacity:1 !important; transform:none !important; }
 }
