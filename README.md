@@ -8,8 +8,20 @@ Sitio estático de una constructora en Bogotá. Diseño editorial con CSS propio
 ```
 index.html    Estructura y contenido de las 5 rutas
 styles.css    Sistema de diseño: tokens, componentes, responsive, a11y
-script.js     Router por hash, índice, fichas, formulario, widgets
+script.js     Router por hash, índice, fichas, formulario, widgets, escena
+vendor/       GSAP 3.15 y ScrollTrigger, minificados (licencia sin cargo)
 ```
+
+## La escena de la portada
+
+La portada abre una lámina de dibujo: la Torre Chapinero Alto se construye
+con el scroll, del terreno a la entrega, en siete etapas. El edificio es un
+SVG en línea de unos 500 nodos que se anima con **una sola línea de tiempo**
+de GSAP + ScrollTrigger y `scrub`. Los paneles de texto viven en el flujo
+normal, así que se leen, se navegan y se indexan igual, y sin JavaScript la
+escena se queda en su versión estática con todo el contenido visible.
+
+Cómo ajustarla está en **[SCROLLYTELLING.md](SCROLLYTELLING.md)**.
 
 ## Rutas
 
@@ -41,4 +53,6 @@ vercel.comNew → Project → Other → Framework: Other. Output directory: `.`.
 - Contraste WCAG AA en todos los pares de texto
 - Navegación por teclado con focus trap en menús
 - `prefers-reduced-motion` y `prefers-contrast` respetados
+- La escena aguanta 60 fps con el CPU limitado ×4 en móvil; sin CLS
+- Las 14 imágenes, todos los enlaces y las 5 rutas se conservan íntegros
 # Construmax
