@@ -228,7 +228,16 @@ const Index = (function () {
     return { show, hide };
   })();
 
-  return { render, filter, Peek };
+  /* Los botones de categoría existían en el HTML, con sus aria-pressed y su
+     estado vivo, pero nunca estuvieron conectados: filter() no lo llamaba
+     nadie. Aquí se enchufan. */
+  function init() {
+    $$('.tab').forEach((t) => {
+      t.addEventListener('click', () => filter(t.dataset.filter));
+    });
+  }
+
+  return { render, filter, init, Peek };
 })();
 
 /* =========================================================
@@ -989,6 +998,7 @@ const Form = (function () {
 document.addEventListener('DOMContentLoaded', function () {
   Index.render('#homeIdx', DATA.slice(0, 4));
   Index.render('#allIdx');
+  Index.init();
   Chrome.init();
   Drawer.init();
   WA.init();
