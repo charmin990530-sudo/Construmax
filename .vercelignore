@@ -1,0 +1,9 @@
+# El sitio es estático y sin build: Vercel sirve la raíz tal cual.
+# Aquí se corta todo lo que no debe acabar publicado en el CDN.
+.env*
+.git*
+*.log
+.DS_Store
+Thumbs.db
+node_modules/
+.vscode/
