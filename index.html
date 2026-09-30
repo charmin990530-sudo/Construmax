@@ -28,6 +28,19 @@
 
 <link rel="stylesheet" href="styles.css">
 
+<!-- Marca de capacidad antes del primer pintado: si JavaScript no corre,
+     la escena se queda en su versión estática (sin salto de layout) y el
+     contenido sigue visible. La clase .st activa el scroll ligado. -->
+<script>
+(function () {
+  var d = document.documentElement;
+  d.classList.add('js');
+  try {
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('st');
+  } catch (e) {}
+}());
+</script>
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -155,70 +168,149 @@
       </div>
     </div>
 
-    <!-- Banda de datos -->
-    <div class="facts">
-      <div class="shell facts__in">
-        <div class="fact"><span class="mono t-3">Fundada</span><strong>2007</strong></div>
-        <div class="fact"><span class="mono t-3">Proyectos</span><strong><span class="counter" data-target="47">0</span></strong></div>
-        <div class="fact"><span class="mono t-3">Construido</span><strong><span class="counter" data-target="312000">0</span> m²</strong></div>
-        <div class="fact"><span class="mono t-3">Satisfacción</span><strong><span class="counter" data-target="98">0</span>%</strong></div>
-        <div class="fact"><span class="mono t-3">Garantía estructural</span><strong>10 años</strong></div>
-      </div>
-    </div>
   </div>
 
-  <!-- ---------- MANIFIESTO ---------- -->
-  <div class="pull">
-    <div class="shell">
-      <p class="pull__txt">
-        No dibujamos torres. <em>Las sostenemos.</em>
-        <span class="pull__note mono">Método CONSTRUMAX — 01 a 05</span>
-      </p>
-    </div>
-  </div>
+  <!-- ============================================================
+       ESCENA — la Torre Chapinero Alto se construye con el scroll
+       ============================================================
+       El contenido vive en el flujo normal (una etapa por <li>), así que
+       se lee, se navega y se indexa igual con o sin JavaScript. La lámina
+       de la derecha es un SVG en línea que GSAP mueve con un único
+       ScrollTrigger. Ver SCROLLYTELLING.md. -->
 
-  <!-- ---------- PROCESO ---------- -->
-  <div class="proc" id="proc">
-    <div class="shell">
-      <header class="sheet reveal">
+  <div class="scene" id="scene">
+
+    <!-- Umbral: la tesis antes de la película -->
+    <header class="scene__intro">
+      <div class="shell">
         <p class="mono kicker"><span class="kicker__tick"></span>02 — Método</p>
         <h2 class="sheet__title">Cuatro etapas.<br>Un solo equipo.</h2>
-      </header>
-
-      <div class="proc__grid">
-        <div class="proc__media">
-          <div class="proc__stage">
-            <img id="procImg"
-                 src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200&auto=format&fit=crop"
-                 alt="Arquitecto revisando planos de estructura" width="1200" height="900"
-                 decoding="async" fetchpriority="lazy">
-            <span class="proc__tag mono" id="procTag">Etapa 01 — Diseño y planos</span>
-          </div>
-        </div>
-
-        <ol class="proc__list" id="procList">
-          <li class="step" data-step="0">
-            <span class="step__n mono">01</span>
-            <h3 class="step__t">Diseño y planos</h3>
-            <p class="step__d">Estudio de suelos, diseño arquitectónico y cálculo estructural certificado bajo la NSR-10. Nada se excava sin ver antes el terreno.</p>
-          </li>
-          <li class="step" data-step="1">
-            <span class="step__n mono">02</span>
-            <h3 class="step__t">Cimentación</h3>
-            <p class="step__d">Excavación y cimentación profunda, calculada para la actividad sísmica de la sabana de Bogotá. Es la única parte de la obra que no se puede repetir.</p>
-          </li>
-          <li class="step" data-step="2">
-            <span class="step__n mono">03</span>
-            <h3 class="step__t">Estructura y fachada</h3>
-            <p class="step__d">Concreto reforzado en sitio y fachadas térmicas de alto desempeño. Revisión de calidad cada 40 centímetros de vaciado.</p>
-          </li>
-          <li class="step" data-step="3">
-            <span class="step__n mono">04</span>
-            <h3 class="step__t">Entrega de llaves</h3>
-            <p class="step__d">Interventoría final, pruebas de calidad y entrega puntual con tu asesor CONSTRUMAX. Después de eso, garantía de 10 años.</p>
-          </li>
-        </ol>
+        <p class="scene__lead">Torre Chapinero Alto, 24 pisos, Chapinero. Sigue la obra desde el terreno hasta la entrega.</p>
       </div>
+    </header>
+
+    <div class="scene__body" id="sceneBody">
+
+      <!-- Lámina fija -->
+      <div class="scene__viewport" id="sceneVp">
+        <div class="scene__paper">
+          <div class="scene__sky" aria-hidden="true"></div>
+          <svg class="tw" viewBox="0 0 700 900" preserveAspectRatio="xMidYMax slice" role="img" aria-labelledby="twTitle twDesc" xmlns="http://www.w3.org/2000/svg">
+<title id="twTitle">Torre Chapinero Alto, 24 pisos, Bogotá</title>
+<desc id="twDesc">Lámina técnica de una torre que se levanta por capas con el scroll: terreno, excavación, cimientos, estructura, envolvente y acabados, hasta quedar terminada al atardecer con las luces encendidas.</desc>
+<defs><pattern id="px-brick" width="7" height="7" patternUnits="userSpaceOnUse"><line class="px-l" x1="0" y1="0" x2="0" y2="7"/></pattern><pattern id="px-soil" width="9" height="9" patternUnits="userSpaceOnUse"><line class="px-l px-l2" x1="0" y1="0" x2="0" y2="9"/></pattern><pattern id="px-hatch" width="6" height="6" patternUnits="userSpaceOnUse"><line class="px-l" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>
+<g class="tw-sky"><rect class="sk-band" x="0" y="676" width="700" height="84"/><circle class="sk-sun" cx="606" cy="214" r="27"/></g>
+<g class="tw-clouds"><g class="cl cl-0" data-d="0.5"><rect class="cl-a" x="-60" y="300" width="330" height="6"/><rect class="cl-b" x="90" y="287" width="170" height="6"/></g><g class="cl cl-1" data-d="1"><rect class="cl-a" x="330" y="460" width="290" height="6"/><rect class="cl-b" x="460" y="447" width="144" height="6"/></g><g class="cl cl-2" data-d="1.8"><rect class="cl-a" x="120" y="616" width="250" height="6"/><rect class="cl-b" x="230" y="603" width="118" height="6"/></g></g>
+<g class="tw-city"><rect class="ct-b" x="0" y="724" width="58" height="36"/><rect class="ct-bb" x="64" y="733" width="44" height="27"/><rect class="ct-b" x="114" y="715" width="66" height="45"/><rect class="ct-bb" x="540" y="733" width="46" height="27"/><rect class="ct-b" x="592" y="724" width="58" height="36"/><rect class="ct-bb" x="656" y="715" width="44" height="45"/><rect class="ct-b" x="600" y="742" width="30" height="18"/><rect class="ct-bb" x="536" y="742" width="32" height="18"/><rect class="ct-b" x="186" y="742" width="28" height="18"/></g>
+<g class="tw-terrain"><rect class="tw-soil" x="0" y="760" width="700" height="140"/><line class="tw-ground" x1="0" y1="760" x2="700" y2="760"/><g class="tw-pit"><rect class="tw-pitv" x="175" y="762" width="350" height="110" fill="url(#px-soil)"/><line class="tw-pitl" x1="175" y1="762" x2="175" y2="872"/><line class="tw-pitr" x1="525" y1="762" x2="525" y2="872"/><line class="tw-pitb" x1="175" y1="872" x2="525" y2="872"/></g><g class="tw-rebar"><line class="tw-bar" x1="195" y1="770" x2="195" y2="862"/><line class="tw-bar" x1="233.75" y1="770" x2="233.75" y2="862"/><line class="tw-bar" x1="272.5" y1="770" x2="272.5" y2="862"/><line class="tw-bar" x1="311.25" y1="770" x2="311.25" y2="862"/><line class="tw-bar" x1="350" y1="770" x2="350" y2="862"/><line class="tw-bar" x1="388.75" y1="770" x2="388.75" y2="862"/><line class="tw-bar" x1="427.5" y1="770" x2="427.5" y2="862"/><line class="tw-bar" x1="466.25" y1="770" x2="466.25" y2="862"/><line class="tw-bar" x1="505" y1="770" x2="505" y2="862"/></g><g class="tw-found"><rect class="tw-fslab" x="163" y="753" width="374" height="7"/><rect class="tw-fstem" x="185" y="772" width="330" height="90"/></g></g>
+<g class="tw-mass"><rect class="ms-b" x="305" y="400" width="90" height="360"/><rect class="ms-b" x="195" y="490" width="90" height="270"/><rect class="ms-b" x="420" y="580" width="80" height="180"/><rect class="ms-b" x="175" y="730" width="350" height="30"/></g>
+<g class="tw-str">
+<g class="fl" data-i="0"><rect class="fl__sl" x="305" y="758" width="90" height="2"/><rect class="fl__gh" x="312" y="747.5" width="76" height="7"/><rect class="fl__br" x="312" y="747.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="58" x="328.7" y="748.5" width="12.2" height="5"/><rect class="fl__w" data-o="40" x="343.9" y="748.5" width="12.2" height="5"/><rect class="fl__w" data-o="83" x="359.1" y="748.5" width="12.2" height="5"/></g><g class="fl" data-i="1"><rect class="fl__sl" x="305" y="743" width="90" height="2"/><rect class="fl__gh" x="312" y="732.5" width="76" height="7"/><rect class="fl__br" x="312" y="732.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="99" x="343.9" y="733.5" width="12.2" height="5"/></g><g class="fl" data-i="2"><rect class="fl__sl" x="305" y="728" width="90" height="2"/><rect class="fl__gh" x="312" y="717.5" width="76" height="7"/><rect class="fl__br" x="312" y="717.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="66" x="313.5" y="718.5" width="12.2" height="5"/><rect class="fl__w" data-o="38" x="328.7" y="718.5" width="12.2" height="5"/><rect class="fl__w" data-o="3" x="343.9" y="718.5" width="12.2" height="5"/></g><g class="fl" data-i="3"><rect class="fl__sl" x="305" y="713" width="90" height="2"/><rect class="fl__gh" x="312" y="702.5" width="76" height="7"/><rect class="fl__br" x="312" y="702.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="97" x="343.9" y="703.5" width="12.2" height="5"/><rect class="fl__w is-warm" data-o="28" x="359.1" y="703.5" width="12.2" height="5"/><rect class="fl__w" data-o="78" x="374.3" y="703.5" width="12.2" height="5"/></g><g class="fl" data-i="4"><rect class="fl__sl" x="305" y="698" width="90" height="2"/><rect class="fl__gh" x="312" y="687.5" width="76" height="7"/><rect class="fl__br" x="312" y="687.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="35" x="343.9" y="688.5" width="12.2" height="5"/><rect class="fl__w is-warm" data-o="84" x="374.3" y="688.5" width="12.2" height="5"/></g><g class="fl" data-i="5"><rect class="fl__sl" x="305" y="683" width="90" height="2"/><rect class="fl__gh" x="312" y="672.5" width="76" height="7"/><rect class="fl__br" x="312" y="672.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="46" x="359.1" y="673.5" width="12.2" height="5"/><rect class="fl__w is-warm" data-o="11" x="374.3" y="673.5" width="12.2" height="5"/></g><g class="fl" data-i="6"><rect class="fl__sl" x="305" y="668" width="90" height="2"/><rect class="fl__gh" x="312" y="657.5" width="76" height="7"/><rect class="fl__br" x="312" y="657.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="15" x="359.1" y="658.5" width="12.2" height="5"/></g><g class="fl" data-i="7"><rect class="fl__sl" x="305" y="653" width="90" height="2"/><rect class="fl__gh" x="312" y="642.5" width="76" height="7"/><rect class="fl__br" x="312" y="642.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="15" x="343.9" y="643.5" width="12.2" height="5"/></g><g class="fl" data-i="8"><rect class="fl__sl" x="305" y="638" width="90" height="2"/><rect class="fl__gh" x="312" y="627.5" width="76" height="7"/><rect class="fl__br" x="312" y="627.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="45" x="328.7" y="628.5" width="12.2" height="5"/><rect class="fl__w is-warm" data-o="93" x="374.3" y="628.5" width="12.2" height="5"/></g><g class="fl" data-i="9"><rect class="fl__sl" x="305" y="623" width="90" height="2"/><rect class="fl__gh" x="312" y="612.5" width="76" height="7"/><rect class="fl__br" x="312" y="612.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="64" x="328.7" y="613.5" width="12.2" height="5"/><rect class="fl__w" data-o="14" x="374.3" y="613.5" width="12.2" height="5"/></g><g class="fl" data-i="10"><rect class="fl__sl" x="305" y="608" width="90" height="2"/><rect class="fl__gh" x="312" y="597.5" width="76" height="7"/><rect class="fl__br" x="312" y="597.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="0" x="328.7" y="598.5" width="12.2" height="5"/><rect class="fl__w" data-o="91" x="359.1" y="598.5" width="12.2" height="5"/><rect class="fl__w" data-o="21" x="374.3" y="598.5" width="12.2" height="5"/></g><g class="fl" data-i="11"><rect class="fl__sl" x="305" y="593" width="90" height="2"/><rect class="fl__gh" x="312" y="582.5" width="76" height="7"/><rect class="fl__br" x="312" y="582.5" width="76" height="7" fill="url(#px-brick)"/></g><g class="fl" data-i="12"><rect class="fl__sl" x="305" y="578" width="90" height="2"/><rect class="fl__gh" x="312" y="567.5" width="76" height="7"/><rect class="fl__br" x="312" y="567.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="64" x="313.5" y="568.5" width="12.2" height="5"/></g><g class="fl" data-i="13"><rect class="fl__sl" x="305" y="563" width="90" height="2"/><rect class="fl__gh" x="312" y="552.5" width="76" height="7"/><rect class="fl__br" x="312" y="552.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="12" x="313.5" y="553.5" width="12.2" height="5"/><rect class="fl__w" data-o="58" x="343.9" y="553.5" width="12.2" height="5"/><rect class="fl__w is-warm" data-o="68" x="359.1" y="553.5" width="12.2" height="5"/><rect class="fl__w" data-o="30" x="374.3" y="553.5" width="12.2" height="5"/></g><g class="fl" data-i="14"><rect class="fl__sl" x="305" y="548" width="90" height="2"/><rect class="fl__gh" x="312" y="537.5" width="76" height="7"/><rect class="fl__br" x="312" y="537.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="60" x="328.7" y="538.5" width="12.2" height="5"/><rect class="fl__w" data-o="18" x="343.9" y="538.5" width="12.2" height="5"/><rect class="fl__w" data-o="30" x="359.1" y="538.5" width="12.2" height="5"/><rect class="fl__w" data-o="40" x="374.3" y="538.5" width="12.2" height="5"/></g><g class="fl" data-i="15"><rect class="fl__sl" x="305" y="533" width="90" height="2"/><rect class="fl__gh" x="312" y="522.5" width="76" height="7"/><rect class="fl__br" x="312" y="522.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="49" x="313.5" y="523.5" width="12.2" height="5"/><rect class="fl__w is-warm" data-o="40" x="328.7" y="523.5" width="12.2" height="5"/><rect class="fl__w" data-o="19" x="343.9" y="523.5" width="12.2" height="5"/><rect class="fl__w" data-o="95" x="374.3" y="523.5" width="12.2" height="5"/></g><g class="fl" data-i="16"><rect class="fl__sl" x="305" y="518" width="90" height="2"/><rect class="fl__gh" x="312" y="507.5" width="76" height="7"/><rect class="fl__br" x="312" y="507.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="46" x="313.5" y="508.5" width="12.2" height="5"/><rect class="fl__w" data-o="90" x="343.9" y="508.5" width="12.2" height="5"/><rect class="fl__w" data-o="88" x="374.3" y="508.5" width="12.2" height="5"/></g><g class="fl" data-i="17"><rect class="fl__sl" x="305" y="503" width="90" height="2"/><rect class="fl__gh" x="312" y="492.5" width="76" height="7"/><rect class="fl__br" x="312" y="492.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="97" x="328.7" y="493.5" width="12.2" height="5"/><rect class="fl__w" data-o="67" x="359.1" y="493.5" width="12.2" height="5"/></g><g class="fl" data-i="18"><rect class="fl__sl" x="305" y="488" width="90" height="2"/><rect class="fl__gh" x="312" y="477.5" width="76" height="7"/><rect class="fl__br" x="312" y="477.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="35" x="343.9" y="478.5" width="12.2" height="5"/><rect class="fl__w" data-o="28" x="359.1" y="478.5" width="12.2" height="5"/><rect class="fl__w is-warm" data-o="22" x="374.3" y="478.5" width="12.2" height="5"/></g><g class="fl" data-i="19"><rect class="fl__sl" x="305" y="473" width="90" height="2"/><rect class="fl__gh" x="312" y="462.5" width="76" height="7"/><rect class="fl__br" x="312" y="462.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="21" x="359.1" y="463.5" width="12.2" height="5"/></g><g class="fl" data-i="20"><rect class="fl__sl" x="305" y="458" width="90" height="2"/><rect class="fl__gh" x="312" y="447.5" width="76" height="7"/><rect class="fl__br" x="312" y="447.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="49" x="313.5" y="448.5" width="12.2" height="5"/></g><g class="fl" data-i="21"><rect class="fl__sl" x="305" y="443" width="90" height="2"/><rect class="fl__gh" x="312" y="432.5" width="76" height="7"/><rect class="fl__br" x="312" y="432.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="31" x="313.5" y="433.5" width="12.2" height="5"/><rect class="fl__w" data-o="50" x="359.1" y="433.5" width="12.2" height="5"/></g><g class="fl" data-i="22"><rect class="fl__sl" x="305" y="428" width="90" height="2"/><rect class="fl__gh" x="312" y="417.5" width="76" height="7"/><rect class="fl__br" x="312" y="417.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="33" x="343.9" y="418.5" width="12.2" height="5"/><rect class="fl__w is-warm" data-o="80" x="359.1" y="418.5" width="12.2" height="5"/></g><g class="fl" data-i="23"><rect class="fl__sl" x="305" y="413" width="90" height="2"/><rect class="fl__gh" x="312" y="402.5" width="76" height="7"/><rect class="fl__br" x="312" y="402.5" width="76" height="7" fill="url(#px-brick)"/></g><g class="fl" data-i="0"><rect class="fl__sl" x="195" y="758" width="90" height="2"/><rect class="fl__gh" x="202" y="747.5" width="76" height="7"/><rect class="fl__br" x="202" y="747.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="33" x="203.5" y="748.5" width="16" height="5"/><rect class="fl__w" data-o="23" x="222.5" y="748.5" width="16" height="5"/><rect class="fl__w" data-o="71" x="241.5" y="748.5" width="16" height="5"/></g><g class="fl" data-i="1"><rect class="fl__sl" x="195" y="743" width="90" height="2"/><rect class="fl__gh" x="202" y="732.5" width="76" height="7"/><rect class="fl__br" x="202" y="732.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="75" x="241.5" y="733.5" width="16" height="5"/></g><g class="fl" data-i="2"><rect class="fl__sl" x="195" y="728" width="90" height="2"/><rect class="fl__gh" x="202" y="717.5" width="76" height="7"/><rect class="fl__br" x="202" y="717.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="9" x="222.5" y="718.5" width="16" height="5"/><rect class="fl__w" data-o="53" x="260.5" y="718.5" width="16" height="5"/></g><g class="fl" data-i="3"><rect class="fl__sl" x="195" y="713" width="90" height="2"/><rect class="fl__gh" x="202" y="702.5" width="76" height="7"/><rect class="fl__br" x="202" y="702.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="51" x="203.5" y="703.5" width="16" height="5"/><rect class="fl__w" data-o="76" x="241.5" y="703.5" width="16" height="5"/><rect class="fl__w" data-o="95" x="260.5" y="703.5" width="16" height="5"/></g><g class="fl" data-i="4"><rect class="fl__sl" x="195" y="698" width="90" height="2"/><rect class="fl__gh" x="202" y="687.5" width="76" height="7"/><rect class="fl__br" x="202" y="687.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="13" x="222.5" y="688.5" width="16" height="5"/><rect class="fl__w" data-o="97" x="241.5" y="688.5" width="16" height="5"/></g><g class="fl" data-i="5"><rect class="fl__sl" x="195" y="683" width="90" height="2"/><rect class="fl__gh" x="202" y="672.5" width="76" height="7"/><rect class="fl__br" x="202" y="672.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="4" x="241.5" y="673.5" width="16" height="5"/><rect class="fl__w" data-o="10" x="260.5" y="673.5" width="16" height="5"/></g><g class="fl" data-i="6"><rect class="fl__sl" x="195" y="668" width="90" height="2"/><rect class="fl__gh" x="202" y="657.5" width="76" height="7"/><rect class="fl__br" x="202" y="657.5" width="76" height="7" fill="url(#px-brick)"/></g><g class="fl" data-i="7"><rect class="fl__sl" x="195" y="653" width="90" height="2"/><rect class="fl__gh" x="202" y="642.5" width="76" height="7"/><rect class="fl__br" x="202" y="642.5" width="76" height="7" fill="url(#px-brick)"/></g><g class="fl" data-i="8"><rect class="fl__sl" x="195" y="638" width="90" height="2"/><rect class="fl__gh" x="202" y="627.5" width="76" height="7"/><rect class="fl__br" x="202" y="627.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="85" x="241.5" y="628.5" width="16" height="5"/></g><g class="fl" data-i="9"><rect class="fl__sl" x="195" y="623" width="90" height="2"/><rect class="fl__gh" x="202" y="612.5" width="76" height="7"/><rect class="fl__br" x="202" y="612.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="89" x="241.5" y="613.5" width="16" height="5"/><rect class="fl__w" data-o="48" x="260.5" y="613.5" width="16" height="5"/></g><g class="fl" data-i="10"><rect class="fl__sl" x="195" y="608" width="90" height="2"/><rect class="fl__gh" x="202" y="597.5" width="76" height="7"/><rect class="fl__br" x="202" y="597.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="40" x="203.5" y="598.5" width="16" height="5"/><rect class="fl__w" data-o="13" x="222.5" y="598.5" width="16" height="5"/></g><g class="fl" data-i="11"><rect class="fl__sl" x="195" y="593" width="90" height="2"/><rect class="fl__gh" x="202" y="582.5" width="76" height="7"/><rect class="fl__br" x="202" y="582.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="97" x="203.5" y="583.5" width="16" height="5"/><rect class="fl__w" data-o="35" x="241.5" y="583.5" width="16" height="5"/><rect class="fl__w" data-o="84" x="260.5" y="583.5" width="16" height="5"/></g><g class="fl" data-i="12"><rect class="fl__sl" x="195" y="578" width="90" height="2"/><rect class="fl__gh" x="202" y="567.5" width="76" height="7"/><rect class="fl__br" x="202" y="567.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="45" x="203.5" y="568.5" width="16" height="5"/><rect class="fl__w" data-o="97" x="222.5" y="568.5" width="16" height="5"/><rect class="fl__w" data-o="46" x="241.5" y="568.5" width="16" height="5"/><rect class="fl__w" data-o="15" x="260.5" y="568.5" width="16" height="5"/></g><g class="fl" data-i="13"><rect class="fl__sl" x="195" y="563" width="90" height="2"/><rect class="fl__gh" x="202" y="552.5" width="76" height="7"/><rect class="fl__br" x="202" y="552.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="75" x="203.5" y="553.5" width="16" height="5"/><rect class="fl__w" data-o="30" x="260.5" y="553.5" width="16" height="5"/></g><g class="fl" data-i="14"><rect class="fl__sl" x="195" y="548" width="90" height="2"/><rect class="fl__gh" x="202" y="537.5" width="76" height="7"/><rect class="fl__br" x="202" y="537.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="95" x="203.5" y="538.5" width="16" height="5"/><rect class="fl__w" data-o="31" x="222.5" y="538.5" width="16" height="5"/><rect class="fl__w" data-o="98" x="260.5" y="538.5" width="16" height="5"/></g><g class="fl" data-i="15"><rect class="fl__sl" x="195" y="533" width="90" height="2"/><rect class="fl__gh" x="202" y="522.5" width="76" height="7"/><rect class="fl__br" x="202" y="522.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="92" x="241.5" y="523.5" width="16" height="5"/><rect class="fl__w" data-o="8" x="260.5" y="523.5" width="16" height="5"/></g><g class="fl" data-i="16"><rect class="fl__sl" x="195" y="518" width="90" height="2"/><rect class="fl__gh" x="202" y="507.5" width="76" height="7"/><rect class="fl__br" x="202" y="507.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="1" x="203.5" y="508.5" width="16" height="5"/><rect class="fl__w" data-o="11" x="241.5" y="508.5" width="16" height="5"/></g><g class="fl" data-i="17"><rect class="fl__sl" x="195" y="503" width="90" height="2"/><rect class="fl__gh" x="202" y="492.5" width="76" height="7"/><rect class="fl__br" x="202" y="492.5" width="76" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="92" x="222.5" y="493.5" width="16" height="5"/><rect class="fl__w" data-o="94" x="241.5" y="493.5" width="16" height="5"/><rect class="fl__w" data-o="5" x="260.5" y="493.5" width="16" height="5"/></g><g class="fl" data-i="0"><rect class="fl__sl" x="420" y="758" width="80" height="2"/><rect class="fl__gh" x="427" y="747.5" width="66" height="7"/><rect class="fl__br" x="427" y="747.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="47" x="428.5" y="748.5" width="13.5" height="5"/><rect class="fl__w" data-o="74" x="445" y="748.5" width="13.5" height="5"/><rect class="fl__w is-warm" data-o="75" x="461.5" y="748.5" width="13.5" height="5"/></g><g class="fl" data-i="1"><rect class="fl__sl" x="420" y="743" width="80" height="2"/><rect class="fl__gh" x="427" y="732.5" width="66" height="7"/><rect class="fl__br" x="427" y="732.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="31" x="428.5" y="733.5" width="13.5" height="5"/><rect class="fl__w" data-o="42" x="461.5" y="733.5" width="13.5" height="5"/></g><g class="fl" data-i="2"><rect class="fl__sl" x="420" y="728" width="80" height="2"/><rect class="fl__gh" x="427" y="717.5" width="66" height="7"/><rect class="fl__br" x="427" y="717.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="46" x="428.5" y="718.5" width="13.5" height="5"/><rect class="fl__w" data-o="30" x="478" y="718.5" width="13.5" height="5"/></g><g class="fl" data-i="3"><rect class="fl__sl" x="420" y="713" width="80" height="2"/><rect class="fl__gh" x="427" y="702.5" width="66" height="7"/><rect class="fl__br" x="427" y="702.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="61" x="428.5" y="703.5" width="13.5" height="5"/><rect class="fl__w" data-o="47" x="445" y="703.5" width="13.5" height="5"/><rect class="fl__w" data-o="26" x="461.5" y="703.5" width="13.5" height="5"/><rect class="fl__w is-warm" data-o="5" x="478" y="703.5" width="13.5" height="5"/></g><g class="fl" data-i="4"><rect class="fl__sl" x="420" y="698" width="80" height="2"/><rect class="fl__gh" x="427" y="687.5" width="66" height="7"/><rect class="fl__br" x="427" y="687.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="19" x="428.5" y="688.5" width="13.5" height="5"/><rect class="fl__w" data-o="64" x="445" y="688.5" width="13.5" height="5"/><rect class="fl__w" data-o="48" x="461.5" y="688.5" width="13.5" height="5"/><rect class="fl__w" data-o="82" x="478" y="688.5" width="13.5" height="5"/></g><g class="fl" data-i="5"><rect class="fl__sl" x="420" y="683" width="80" height="2"/><rect class="fl__gh" x="427" y="672.5" width="66" height="7"/><rect class="fl__br" x="427" y="672.5" width="66" height="7" fill="url(#px-brick)"/></g><g class="fl" data-i="6"><rect class="fl__sl" x="420" y="668" width="80" height="2"/><rect class="fl__gh" x="427" y="657.5" width="66" height="7"/><rect class="fl__br" x="427" y="657.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="47" x="428.5" y="658.5" width="13.5" height="5"/><rect class="fl__w" data-o="5" x="445" y="658.5" width="13.5" height="5"/></g><g class="fl" data-i="7"><rect class="fl__sl" x="420" y="653" width="80" height="2"/><rect class="fl__gh" x="427" y="642.5" width="66" height="7"/><rect class="fl__br" x="427" y="642.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="64" x="461.5" y="643.5" width="13.5" height="5"/></g><g class="fl" data-i="8"><rect class="fl__sl" x="420" y="638" width="80" height="2"/><rect class="fl__gh" x="427" y="627.5" width="66" height="7"/><rect class="fl__br" x="427" y="627.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="85" x="428.5" y="628.5" width="13.5" height="5"/></g><g class="fl" data-i="9"><rect class="fl__sl" x="420" y="623" width="80" height="2"/><rect class="fl__gh" x="427" y="612.5" width="66" height="7"/><rect class="fl__br" x="427" y="612.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="66" x="478" y="613.5" width="13.5" height="5"/></g><g class="fl" data-i="10"><rect class="fl__sl" x="420" y="608" width="80" height="2"/><rect class="fl__gh" x="427" y="597.5" width="66" height="7"/><rect class="fl__br" x="427" y="597.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w is-warm" data-o="90" x="428.5" y="598.5" width="13.5" height="5"/><rect class="fl__w" data-o="24" x="445" y="598.5" width="13.5" height="5"/><rect class="fl__w" data-o="4" x="461.5" y="598.5" width="13.5" height="5"/><rect class="fl__w" data-o="3" x="478" y="598.5" width="13.5" height="5"/></g><g class="fl" data-i="11"><rect class="fl__sl" x="420" y="593" width="80" height="2"/><rect class="fl__gh" x="427" y="582.5" width="66" height="7"/><rect class="fl__br" x="427" y="582.5" width="66" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="95" x="445" y="583.5" width="13.5" height="5"/><rect class="fl__w" data-o="3" x="478" y="583.5" width="13.5" height="5"/></g><g class="fl" data-i="0"><rect class="fl__sl" x="175" y="758" width="350" height="2"/><rect class="fl__gh" x="183" y="747.5" width="334" height="7"/><rect class="fl__br" x="183" y="747.5" width="334" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="39" x="184.5" y="748.5" width="30.4" height="5"/><rect class="fl__w" data-o="37" x="217.9" y="748.5" width="30.4" height="5"/><rect class="fl__w is-warm" data-o="70" x="251.3" y="748.5" width="30.4" height="5"/><rect class="fl__w" data-o="22" x="351.5" y="748.5" width="30.4" height="5"/></g><g class="fl" data-i="1"><rect class="fl__sl" x="175" y="743" width="350" height="2"/><rect class="fl__gh" x="183" y="732.5" width="334" height="7"/><rect class="fl__br" x="183" y="732.5" width="334" height="7" fill="url(#px-brick)"/><rect class="fl__w" data-o="11" x="251.3" y="733.5" width="30.4" height="5"/><rect class="fl__w" data-o="51" x="284.7" y="733.5" width="30.4" height="5"/><rect class="fl__w is-warm" data-o="58" x="318.1" y="733.5" width="30.4" height="5"/><rect class="fl__w is-warm" data-o="56" x="384.9" y="733.5" width="30.4" height="5"/><rect class="fl__w" data-o="48" x="418.3" y="733.5" width="30.4" height="5"/><rect class="fl__w is-warm" data-o="89" x="451.7" y="733.5" width="30.4" height="5"/></g>
+</g>
+<g class="tw-scaf"><line class="sf-h" x1="183" y1="730" x2="297" y2="730"/><line class="sf-h" x1="183" y1="700" x2="297" y2="700"/><line class="sf-h" x1="183" y1="670" x2="297" y2="670"/><line class="sf-h" x1="183" y1="640" x2="297" y2="640"/><line class="sf-h" x1="183" y1="610" x2="297" y2="610"/><line class="sf-v" x1="183" y1="760" x2="183" y2="580"/><line class="sf-v" x1="297" y1="760" x2="297" y2="580"/><line class="sf-h" x1="293" y1="730" x2="407" y2="730"/><line class="sf-h" x1="293" y1="700" x2="407" y2="700"/><line class="sf-h" x1="293" y1="670" x2="407" y2="670"/><line class="sf-h" x1="293" y1="640" x2="407" y2="640"/><line class="sf-h" x1="293" y1="610" x2="407" y2="610"/><line class="sf-v" x1="293" y1="760" x2="293" y2="580"/><line class="sf-v" x1="407" y1="760" x2="407" y2="580"/><line class="sf-h" x1="408" y1="730" x2="512" y2="730"/><line class="sf-h" x1="408" y1="700" x2="512" y2="700"/><line class="sf-h" x1="408" y1="670" x2="512" y2="670"/><line class="sf-h" x1="408" y1="640" x2="512" y2="640"/><line class="sf-h" x1="408" y1="610" x2="512" y2="610"/><line class="sf-v" x1="408" y1="760" x2="408" y2="580"/><line class="sf-v" x1="512" y1="760" x2="512" y2="580"/></g>
+<g class="tw-crown"><rect class="cr-corn" x="302" y="395" width="96" height="5"/><rect class="cr-tank" x="313" y="384" width="22" height="11"/><line class="cr-ant" x1="381" y1="395" x2="381" y2="366"/><rect class="cr-podium" x="175" y="722" width="350" height="8"/><rect class="cr-park" x="181" y="726" width="338" height="4" fill="url(#px-hatch)"/></g>
+<g class="tw-crane"><g class="cn-mast"><rect class="cn-m" x="566" y="250" width="12" height="510"/><line class="cn-tie" x1="566" y1="258" x2="578" y2="258"/><line class="cn-tie" x1="566" y1="313.78" x2="578" y2="313.78"/><line class="cn-tie" x1="566" y1="369.56" x2="578" y2="369.56"/><line class="cn-tie" x1="566" y1="425.33" x2="578" y2="425.33"/><line class="cn-tie" x1="566" y1="481.11" x2="578" y2="481.11"/><line class="cn-tie" x1="566" y1="536.89" x2="578" y2="536.89"/><line class="cn-tie" x1="566" y1="592.67" x2="578" y2="592.67"/><line class="cn-tie" x1="566" y1="648.44" x2="578" y2="648.44"/><line class="cn-tie" x1="566" y1="704.22" x2="578" y2="704.22"/></g><g class="cn-jib"><rect class="cn-j" x="398" y="245" width="268" height="8"/><rect class="cn-c" x="578" y="247" width="62" height="6"/><line class="cn-t" x1="572" y1="245" x2="452" y2="224"/><line class="cn-t" x1="572" y1="245" x2="628" y2="229"/><g class="cn-hook"><rect class="cn-tr" x="466" y="253" width="15" height="7"/><line class="cn-cab" x1="473" y1="260" x2="473" y2="326"/><rect class="cn-load" x="453" y="326" width="40" height="5"/></g></g></g>
+<g class="tw-work"><g class="wk-exc"><rect class="wk-b1" x="204" y="742" width="50" height="14"/><rect class="wk-t1" x="196" y="737" width="44" height="7"/><line class="wk-b2" x1="252" y1="735" x2="280" y2="710"/><rect class="wk-b3" x="266" y="703" width="22" height="9"/><circle class="wk-w" cx="214" cy="757" r="8"/><circle class="wk-w" cx="246" cy="757" r="8"/></g><g class="wk-trk"><rect class="wk-b1" x="286" y="736" width="56" height="20"/><rect class="wk-t2" x="342" y="720" width="24" height="20"/><circle class="wk-w" cx="302" cy="757" r="9"/><circle class="wk-w" cx="352" cy="757" r="9"/></g><g class="wk-m"><circle class="wk-h" cx="378" cy="730" r="4.5"/><line class="wk-b" x1="378" y1="736" x2="378" y2="750"/><line class="wk-l" x1="378" y1="740" x2="372" y2="750"/><line class="wk-l" x1="378" y1="740" x2="384" y2="750"/><line class="wk-l" x1="378" y1="746" x2="373" y2="750"/><line class="wk-l" x1="378" y1="746" x2="383" y2="750"/></g><g class="wk-m"><circle class="wk-h" cx="398" cy="728" r="4.5"/><line class="wk-b" x1="398" y1="734" x2="398" y2="748"/><line class="wk-l" x1="398" y1="738" x2="392" y2="748"/><line class="wk-l" x1="398" y1="738" x2="404" y2="748"/><line class="wk-l" x1="398" y1="744" x2="393" y2="748"/><line class="wk-l" x1="398" y1="744" x2="403" y2="748"/></g><g class="wk-m"><circle class="wk-h" cx="418" cy="730" r="4.5"/><line class="wk-b" x1="418" y1="736" x2="418" y2="750"/><line class="wk-l" x1="418" y1="740" x2="412" y2="750"/><line class="wk-l" x1="418" y1="740" x2="424" y2="750"/><line class="wk-l" x1="418" y1="746" x2="413" y2="750"/><line class="wk-l" x1="418" y1="746" x2="423" y2="750"/></g></g>
+<g class="tw-dims"><line class="dm-l" x1="150" y1="760" x2="192" y2="760"/><line class="dm-c" x1="150" y1="756.5" x2="150" y2="763.5"/><text class="dm-t" x="143" y="778" text-anchor="end">+0.0</text><line class="dm-l" x1="150" y1="670" x2="192" y2="670"/><line class="dm-c" x1="150" y1="666.5" x2="150" y2="673.5"/><text class="dm-t" x="143" y="674" text-anchor="end">+19.2</text><line class="dm-l" x1="150" y1="580" x2="192" y2="580"/><line class="dm-c" x1="150" y1="576.5" x2="150" y2="583.5"/><text class="dm-t" x="143" y="584" text-anchor="end">+38.4</text><line class="dm-l" x1="150" y1="490" x2="192" y2="490"/><line class="dm-c" x1="150" y1="486.5" x2="150" y2="493.5"/><text class="dm-t" x="143" y="494" text-anchor="end">+57.6</text><line class="dm-l" x1="150" y1="400" x2="192" y2="400"/><line class="dm-c" x1="150" y1="396.5" x2="150" y2="403.5"/><text class="dm-t" x="143" y="404" text-anchor="end">+76.8</text></g>
+</svg></div>
+        <div class="scene__hud" aria-hidden="true">
+          <p class="scene__read"><span class="scene__num" id="stageNum">01</span><i>/</i><span class="scene__tot">07</span><b id="stageName">Terreno</b></p>
+          <div class="scene__track"><span id="sceneBar"></span></div>
+        </div>
+        <nav class="scene__chapters" aria-label="Etapas de la construcción">
+          <ol>
+            <li><button type="button" data-go="0"><span class="mono">01</span><span>Terreno</span></button></li>
+            <li><button type="button" data-go="1"><span class="mono">02</span><span>Excavación</span></button></li>
+            <li><button type="button" data-go="2"><span class="mono">03</span><span>Cimientos</span></button></li>
+            <li><button type="button" data-go="3"><span class="mono">04</span><span>Estructura</span></button></li>
+            <li><button type="button" data-go="4"><span class="mono">05</span><span>Envolvente</span></button></li>
+            <li><button type="button" data-go="5"><span class="mono">06</span><span>Acabados</span></button></li>
+            <li><button type="button" data-go="6"><span class="mono">07</span><span>Entrega</span></button></li>
+          </ol>
+        </nav>
+      </div>
+
+      <!-- Paneles: una por etapa de construcción -->
+      <ol class="scene__panels" id="scenePanels">
+
+        <li class="panel" id="etapa-0" data-stage="0">
+          <p class="mono kicker"><span class="kicker__tick"></span>Etapa 01 — Terreno</p>
+          <h3 class="panel__t">Diseño y planos</h3>
+          <p class="panel__d">Estudio de suelos, diseño arquitectónico y cálculo estructural certificado bajo la NSR-10. Nada se excava sin ver antes el terreno.</p>
+          <figure class="panel__fig">
+            <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1200&auto=format&fit=crop"
+                 alt="Arquitecto revisando planos de estructura" width="1200" height="900"
+                 decoding="async" loading="lazy">
+          </figure>
+        </li>
+
+        <li class="panel" id="etapa-1" data-stage="1">
+          <p class="mono kicker"><span class="kicker__tick"></span>Etapa 02 — Excavación</p>
+          <h3 class="panel__t">Cimentación</h3>
+          <p class="panel__d">Excavación y cimentación profunda, calculada para la actividad sísmica de la sabana de Bogotá. Es la única parte de la obra que no se puede repetir.</p>
+          <figure class="panel__fig">
+            <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=1200&auto=format&fit=crop"
+                 alt="Montaje de acero en obra" width="1200" height="900"
+                 decoding="async" loading="lazy">
+          </figure>
+        </li>
+
+        <li class="panel" id="etapa-2" data-stage="2">
+          <p class="mono kicker"><span class="kicker__tick"></span>Etapa 03 — Cimientos</p>
+          <p class="panel__claim">Es la única parte de la obra que no se puede repetir.</p>
+        </li>
+
+        <li class="panel" id="etapa-3" data-stage="3">
+          <p class="mono kicker"><span class="kicker__tick"></span>Etapa 04 — Estructura</p>
+          <h3 class="panel__t">Estructura y fachada</h3>
+          <p class="panel__d">Concreto reforzado en sitio y fachadas térmicas de alto desempeño. Revisión de calidad cada 40 centímetros de vaciado.</p>
+          <figure class="panel__fig">
+            <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1200&auto=format&fit=crop"
+                 alt="Grúas en obra de estructura" width="1200" height="900"
+                 decoding="async" loading="lazy">
+          </figure>
+        </li>
+
+        <li class="panel" id="etapa-4" data-stage="4">
+          <p class="mono kicker"><span class="kicker__tick"></span>Etapa 05 — Envolvente</p>
+          <h3 class="panel__t">Entrega de llaves</h3>
+          <p class="panel__d">Interventoría final, pruebas de calidad y entrega puntual con tu asesor CONSTRUMAX. Después de eso, garantía de 10 años.</p>
+          <figure class="panel__fig">
+            <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1200&auto=format&fit=crop"
+                 alt="Torres terminadas en el skyline de Bogotá" width="1200" height="900"
+                 decoding="async" loading="lazy">
+          </figure>
+        </li>
+
+        <li class="panel" id="etapa-5" data-stage="5">
+          <p class="mono kicker"><span class="kicker__tick"></span>Etapa 06 — Acabados</p>
+          <p class="panel__claim">No dibujamos torres. <em>Las sostenemos.</em></p>
+          <p class="panel__note mono">Método CONSTRUMAX — 01 a 05</p>
+        </li>
+
+        <li class="panel panel--end" id="etapa-6" data-stage="6">
+          <p class="mono kicker"><span class="kicker__tick"></span>Etapa 07 — Entrega</p>
+
+          <div class="facts">
+            <div class="facts__in">
+              <div class="fact"><span class="mono t-3">Fundada</span><strong>2007</strong></div>
+              <div class="fact"><span class="mono t-3">Proyectos</span><strong><span class="counter" data-target="47">0</span></strong></div>
+              <div class="fact"><span class="mono t-3">Construido</span><strong><span class="counter" data-target="312000">0</span> m²</strong></div>
+              <div class="fact"><span class="mono t-3">Satisfacción</span><strong><span class="counter" data-target="98">0</span>%</strong></div>
+              <div class="fact"><span class="mono t-3">Garantía estructural</span><strong>10 años</strong></div>
+            </div>
+          </div>
+
+          <p class="mono kicker panel__k2"><span class="kicker__tick"></span>04 — Contacto</p>
+          <h3 class="panel__big">¿Tienes un terreno<br>y una idea?</h3>
+          <p class="panel__d">Cuéntanos la ubicación, el área y el uso que buscas. Te respondemos con un estimado en menos de 48 horas hábiles.</p>
+          <div class="panel__btns">
+            <a class="btn btn--ink" href="#/contacto">Solicitar cotización <svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="btn btn--line" href="tel:+573000000000">+57 300 000 0000</a>
+          </div>
+        </li>
+
+      </ol>
     </div>
   </div>
 
@@ -239,20 +331,10 @@
     </div>
   </div>
 
-  <!-- ---------- CTA ---------- -->
-  <div class="shell">
-    <div class="cta reveal">
-      <p class="mono kicker"><span class="kicker__tick"></span>04 — Contacto</p>
-      <p class="cta__title">¿Tienes un terreno<br>y una idea?</p>
-      <div class="cta__end">
-        <p class="cta__txt">Cuéntanos la ubicación, el área y el uso que buscas. Te respondemos con un estimado en menos de 48 horas hábiles.</p>
-        <div class="cta__btns">
-          <a class="btn btn--ink" href="#/contacto">Solicitar cotización <svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-          <a class="btn btn--line" href="tel:+573000000000">+57 300 000 0000</a>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- ---------- CTA ----------
+       El bloque de contacto se vive ahora dentro de la Etapa 07 de la
+       escena, que es donde la obra termina. No se ha perdido ningún texto,
+       enlace ni dato: solo cambió de sitio. -->
 
 </section>
 
@@ -542,6 +624,8 @@
   </div>
 </div>
 
-<script src="script.js"></script>
+<script src="vendor/gsap.min.js" defer></script>
+<script src="vendor/ScrollTrigger.min.js" defer></script>
+<script src="script.js" defer></script>
 </body>
 </html>
