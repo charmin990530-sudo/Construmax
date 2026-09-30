@@ -353,13 +353,16 @@ proyectos, las fichas y el formulario son independientes de `Scrolly`.
 
 ## 9. Rendimiento
 
-Medido con Chromium headless, saltando 120 posiciones de scroll seguidas
-(un stress test bastante más duro que el scroll real de una persona):
+Medido con Chromium headless en un scroll continuo de ~540 px/s:
 
-| | Mediana | p95 | LCP | CLS |
-|---|---|---|---|---|
-| Escritorio 1440×900 | 16,7 ms | 23,9 ms | 480 ms | 0,007 |
-| Móvil 390×844, CPU ×4 | 16,5 ms | 22,3 ms | 512 ms | 0,001 |
+| | Mediana | p95 | Frames a 60 fps | LCP | CLS |
+|---|---|---|---|---|---|
+| Escritorio 1440×900 | 16,7 ms | 19,1 ms | 97 % | 432 ms | 0,0002 |
+| Móvil 390×844, CPU ×4 | 16,6 ms | 19,4 ms | 96 % | 508 ms | 0,001 |
+
+En un stress test más duro (120 saltos de scroll de golpe, cada uno del
+tamaño de una pantalla) la mediana se mantiene en 16,7 ms y solo el
+13–19 % de los frames pasa de 20 ms.
 
 Decisiones que lo sostienen, y que conviene no deshacer sin motivo:
 
