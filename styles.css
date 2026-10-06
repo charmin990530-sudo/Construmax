@@ -886,8 +886,38 @@ body.is-contacto .wa{ display:none; }
   body{ background:#fff; }
   .page[hidden]{ display:block !important; }
   .js .reveal{ opacity:1 !important; transform:none !important; }
-  /* En papel la escena es la lámina estática y los paneles, texto normal */
-  html.st .scene__body{ display:block !important; }
-  html.st .scene__viewport{ position:static !important; height:auto !important; }
-  html.st .panel{ min-height:0 !important; opacity:1 !important; transform:none !important; }
+/* En papel la escena es la lámina estática y los paneles, texto normal */
+html.st .scene__body{ display:block !important; }
+html.st .scene__viewport{ position:static !important; height:auto !important; }
+html.st .panel{ min-height:0 !important; opacity:1 !important; transform:none !important; }
 }
+
+/* ---- Modo día enriquecido ----
+   Sutilísimos degradados y texturas que dan profundidad sin romper
+   la estética editorial. Se aplican cuando no hay preferencia de
+   movimiento reducido y el tema es light. */
+@media (prefers-reduced-motion: no-preference) and (prefers-color-scheme: light){
+  :root{
+    --paper: linear-gradient(180deg, #F9F8F5 0%, #F2F0EA 100%);
+    --paper-2: linear-gradient(180deg, #F5F4F1 0%, #E9E6DD 100%);
+    --ink: #16150F;
+    --rule: rgba(22,21,15,.04);
+    --rule-mid: rgba(22,21,15,.08);
+    --paper-texture: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23F2F0EA' fill-opacity='.3' d='M0 0h120v120H0V0ZM12 12h96v96H12V12ZM36 36h72v72H36V36ZM60 60h48v48H60V60ZM84 84h24v24H84Z'/%3E%3C/svg%3E");
+    --text-shadow: 0 0 1px rgba(0,0,0,.02);
+  }
+}
+body:not([data-theme="dark"]){
+  background: var(--paper);
+}
+a:hover:not([href^="javascript:"]):not([class*="btn"]):not([class*="scene"]):not([class*="panel"]){
+    color: var(--accent);
+    text-decoration: none;
+}
+@media (prefers-reduced-motion: no-preference){
+  html.light:not(.st):not(.st-armed) .scene__hud{
+    background: rgba(242,240,234,.8);
+}
+}
+
+/* ========================================================= */
