@@ -769,8 +769,10 @@ const Scrolly = (function () {
       const e = ctr[i].c - vc;                       /* >0: el panel aún no ha llegado */
       if (Math.abs(e) < bestD) { bestD = Math.abs(e); best = i; }
       const f = clamp(1 - Math.abs(e) / tol[i], 0, 1);
-      const o = quant(f * f * (3 - 2 * f), 200);    /* smoothstep: sin cortes */
-      const y = quant(clamp(e, -1.4, 1.4) * 90, 24);
+      /* Micro-interacción orgánica: oscilación sutil basada en el progreso */
+      const micro = Math.sin(p * 3 * Math.PI) * 0.02;
+      const o = quant(f * f * (3 - 2 * f) + micro, 200);    /* smoothstep: sin cortes */
+      const y = quant(clamp(e, -1.4, 1.4) * 90, 24) + Math.round(micro * 10);
       if (lastP[i] === o && lastP[i + 1] === y) continue;
       lastP[i] = o; lastP[i + 1] = y;
       panels[i].style.opacity = o;
