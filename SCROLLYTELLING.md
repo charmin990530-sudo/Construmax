@@ -1,32 +1,47 @@
 # SCROLLYTELLING — la Torre Chapinero Alto
 
-La portada de CONSTRUMAX es una lámina de dibujo que se construye con el
-scroll. Siete etapas, siete pantallas de recorrido, un solo edificio.
+La portada de CONSTRUMAX es una lámina de dibujo que se sostiene con el
+scroll. Siete revisiones sobre un edificio **ya entregado**, siete pantallas
+de recorrido, un solo edificio.
 
 Todo lo que se explica aquí está en tres sitios: `index.html` (estructura y
-SVG), `styles.css` (sección **10. ESCENA DE CONSTRUCCIÓN**) y el módulo
-`Scrolly` de `script.js`.
+SVG), `styles.css` (sección **10. ESCENA DE LA TORRE**) y el módulo `Scrolly`
+de `script.js`.
 
 ---
 
 ## 1. El concepto
 
-**PLANO VIVO.** El edificio que se levanta es la *Torre Chapinero Alto*, la
-misma torre del pie `Fig. 01` del hero, y alrededor dos bodies más del
-portafolio. El dibujo usa el lenguaje editorial del sitio: líneas de 1px,
-relleno plano, sin degradados, sin sombras, sin esquinas redondeadas, y el
-rojo de plano (`--accent`) como único color.
+**LA TORRE DESPUÉS DE LA ENTREGA.** El edificio que aparece en la lámina no
+se construye: lleva dos años en pie. La escena cuenta lo que le pasa
+después —el diagnóstico, el asentamiento, la inspección, el mantenimiento,
+la ocupación, la reparación y la garantía—.
 
-La lámina se presenta como una hoja con cartela, igual que un plano: cotas de
-nivel (+0.0, +19.2, +38.4, +57.6, +76.8), grúa torre, andamios, foso con
-canastas de acero, retroexcavadora, volqueta y tres obreros en silueta.
+Esto no es un capricho de guion. La portada tiene **dos escenas** y cada
+una tiene que tener un oficio distinto, o se leen como la misma película
+dos veces:
 
-El cielo recorre los tokens de marca, no colores nuevos:
+| Escena | Oficio |
+|---|---|
+| Hero 3D (`stage.js`) | **Construye** la torre: la grúa, la grúa y los veinticuatro pisos |
+| Lámina de scroll (aquí) | **La sostiene** durante los diez años siguientes |
+
+El hero 3D levanta el edificio; la lámina de scroll se lo encuentra ya
+entregado. Por eso en el SVG no hay foso, ni acero, ni grúa torre: hay cotas
+de nivel, una plomada, un andamio y un sello.
+
+El dibujo usa el lenguaje editorial del sitio: líneas de 1 px, relleno plano,
+sin degradados, sin sombras, sin esquinas redondeadas, y el rojo de plano
+(`--accent`) como único color.
+
+La lámina se presenta como una hoja con cartela, igual que un plano. El cielo
+recorre los tokens de marca, no colores nuevos:
 
 | Momento | Token | Color |
 |---|---|---|
-| Amanecer | `--paper` | `#F2F0EA` |
-| Mañana / mediodía | `--paper-2`, `--paper-3` | `#E9E6DD`, `#DCD8CC` |
+| Día | `--paper` | `#F2F0EA` |
+| Media mañana | `--paper-2` | `#E9E6DD` |
+| Tarde | `--paper-3` | `#DCD8CC` |
 | Crepúsculo | `--ink-2` | `#3B392E` |
 | Noche | `--ink` | `#16150F` |
 
@@ -34,17 +49,17 @@ Al llegar la noche la línea de la torre pasa de tinta a papel (transición
 CSS de 0.5 s) y las ventanas se encienden una a una, con un cuarto de ellas
 en rojo de plano.
 
-### Las siete etapas
+### Las siete revisiones
 
-| # | Etapa | Qué se construye | Qué se lee |
+| # | Revisión | Qué hace el dibujo | Qué se lee |
 |---|---|---|---|
-| 01 | Terreno | El solar, las cotas, el sol | Diseño y planos |
-| 02 | Excavación | El foso, la maquinaria, los obreros | Cimentación |
-| 03 | Cimientos | Canastas de acero y placa de fundación | *"Es la única parte de la obra que no se puede repetir."* |
-| 04 | Estructura | La grúa llega y suben los 56 pisos | Estructura y fachada |
-| 05 | Envolvente | Ladrillo, vidrio y andamios | Entrega de llaves |
-| 06 | Acabados | Se desmonta el andamio, se corona la obra | No dibujamos torres. *Las sostenemos.* |
-| 07 | Entrega | Atardecer, luces encendidas, cifras y CTA | 47 proyectos · 312.000 m² · 10 años |
+| 01 | Diagnóstico | Entran las cotas de nivel y la leyenda de materiales | Leer el edificio antes de tocarlo |
+| 02 | Plomada | La plomada cuelga del canto, se inclina y vuelve a la vertical | El asentamiento |
+| 03 | Inspección | Cinco casillas rojas suben por las cotas | Revisión piso a piso |
+| 04 | Andamio | Crece el andamio de fachada con su hoist de obra | Volver a la fachada |
+| 05 | Ocupación | Cae el sol y se encienden las ventanas | La torre ya no es una obra |
+| 06 | Reparación | Se abre un paño, entra vidrio nuevo, sube el oficial | Mantener lo que está en pie |
+| 07 | Garantía | Se desmonta el andamio y se estampa la garantía estructural | Diez años de compromiso |
 
 ---
 
@@ -52,7 +67,7 @@ en rojo de plano.
 
 ```
 .scene                    posición de referencia
-├── .scene__intro         el umbral: "Cuatro etapas. Un solo equipo."
+├── .scene__intro         el umbral: "Dos años después. La misma torre."
 └── .scene__body          ← el ScrollTrigger vigila este bloque
     ├── .scene__viewport  position:sticky · 100dvh · la lámina
     └── .scene__panels    los 7 <li class="panel"> en flujo normal
@@ -90,6 +105,23 @@ El módulo `Scrolly` no registra ningún `scroll`. Todo cuelga de:
 - **`onRefresh: measure`** — recalcula las posiciones al cambiar de ruta,
   al redimensionar y al girar la pantalla.
 
+### Dos clases, dos oficios
+
+| Clase | Qué significa |
+|---|---|
+| `.st` | El layout es el ligado al scroll: la lámina se ancla y los paneles pasan por la línea de lectura. La pone el `<script>` del `<head>` si no hay movimiento reducido. |
+| `.st-armed` | **La animación es dueña del dibujo.** La pone `Scrolly.start()` cuando la línea de tiempo está construida. |
+
+El CSS que esconde el instrumental usa `.st-armed`, no `.st`: si el motor no
+arranca (sin GSAP) la lámina se queda en su versión estática, con la torre
+entregada y las ventanas encendidas, que es justo lo que tiene que verse.
+
+Y `.st-ready` marca "la escena ya está decidida": sin ella, el bloque
+`.scene` se queda en `opacity:0` esperando a un motor que quizá no llegue.
+La pone `Scrolly.init()` siempre, y el `<script>` del `<head>` tiene un
+temporizador de 2,5 s de red de seguridad por si `script.js` no llegara a
+ejecutarse nunca.
+
 ---
 
 ## 3. Cómo ajustar las duraciones
@@ -102,13 +134,13 @@ El recorrido completo dura siempre 1, así que subir un peso estira las demás.
 
 ```js
 stages: [
-  { n: '01', name: 'Terreno',    w: 0.85 },
-  { n: '02', name: 'Excavación', w: 1.00 },
-  { n: '03', name: 'Cimientos',  w: 1.00 },
-  { n: '04', name: 'Estructura', w: 1.55 },   // <- la que más construye
-  { n: '05', name: 'Envolvente', w: 1.25 },
-  { n: '06', name: 'Acabados',   w: 1.00 },
-  { n: '07', name: 'Entrega',    w: 1.35 }
+  { n: '01', name: 'Diagnóstico', w: 0.95 },
+  { n: '02', name: 'Plomada',    w: 1.00 },
+  { n: '03', name: 'Inspección', w: 1.10 },
+  { n: '04', name: 'Andamio',    w: 1.40 },   // <- el que más levanta
+  { n: '05', name: 'Ocupación', w: 1.55 },   // <- el que más cambia el cielo
+  { n: '06', name: 'Reparación', w: 1.20 },
+  { n: '07', name: 'Garantía',   w: 1.35 }
 ]
 ```
 
@@ -131,6 +163,11 @@ En CSS, con una variable por salto:
 `--panel-h` es el alto mínimo de cada etapa, o sea la longitud total:
 7 × 100dvh ≈ siete pantallas en escritorio. **Bájalo si la escena se hace
 larga** (la causa número uno de abandono en móvil).
+
+El respaldo de `dvh` va en `@supports` y no en cascada: en una variable
+personalizada `100dvh` no es una declaración inválida cuando el navegador no
+conoce la unidad, así que las dos declaraciones valen y gana la última.
+Ver STAGE.md § 9.
 
 `--scene-h` es el alto de la lámina en vertical. Ojo: `CFG.read.narrow`
 (0.68) es la línea de lectura y **tiene que coincidir** con la composición
@@ -156,6 +193,22 @@ El cielo no se recalcula a 60 escrituras por segundo, sino 240 veces en
 todo el recorrido, con una transición CSS de 0.16 s que disimula el salto.
 Bajarlo ahorra escrituras, subirlo da un degradado más fino.
 
+### La caída del sol
+
+El cielo no es un degradado libre: son pares [progreso, color] en `CFG.sky`,
+y el atardecer tiene que caer dentro de la etapa 05 (Ocupación), que es
+cuando se encienden las ventanas.
+
+```js
+sky: [[0, '#F2F0EA'], [0.20, '#E9E6DD'], [0.50, '#E9E6DD'],
+      [0.64, '#DCD8CC'], [0.80, '#3B392E'], [1, '#16150F']],
+night: 0.80,   // a partir de aquí la línea pasa a modo noche
+```
+
+`night` tiene que coincidir con el punto en el que el cielo ya es oscuro:
+si la línea pasa a papel antes de que el cielo se apague, el edificio se
+vuelve invisible de golpe.
+
 ---
 
 ## 4. Cómo cambiar los textos de cada etapa
@@ -166,14 +219,14 @@ sincronizar: se editan en `index.html` dentro de
 
 ```html
 <li class="panel" id="etapa-3" data-stage="3">
-  <p class="mono kicker"><span class="kicker__tick"></span>Etapa 04 — Estructura</p>
-  <h3 class="panel__t">Estructura y fachada</h3>
-  <p class="panel__d">Concreto reforzado en sitio…</p>
+  <p class="mono kicker"><span class="kicker__tick"></span>Etapa 04 — Andamio</p>
+  <h3 class="panel__t">Volver a la fachada</h3>
+  <p class="panel__d">Sube el andamio y con él el hoist de obra…</p>
   <figure class="panel__fig"><img src="…" alt="…"></figure>
 </li>
 ```
 
-- El `id="etapa-N"` es el destino del botón de capítulo N.
+- El `id="etapa-N"` sirve de ancla profunda para la etapa N.
 - `data-stage` solo se usa como referencia; el orden real lo da el DOM.
 - Para quitar la foto, borra el `<figure class="panel__fig">` entero: el
   panel se centra igual.
@@ -200,8 +253,8 @@ Todo el color de la lámina sale de cuatro variables CSS registradas:
 |---|---|
 | Cambiar el recorrido del cielo | `CFG.sky` en `script.js` (pares progreso/color) |
 | Cambiar el color del atardecer | La última barra de `CFG.sky` (por defecto `--ink`) |
-| Cambiar el punto en el que cae la noche | `CFG.night` (0.90) |
-| Cambiar cómo se ve la torre de día | `.ms-b`, `.fl__sl`, `.fl__gh` en `styles.css` |
+| Cambiar el punto en el que cae la noche | `CFG.night` (0.80) |
+| Cambiar cómo se ve la torre de día | `.fl__sl`, `.fl__gh`, `.ms-b` en `styles.css` |
 | Cambiar la franja roja del horizonte | `.sk-band{ fill:var(--accent) }` y la opacidad del tween |
 
 **No añadas colores nuevos al sistema.** La paleta es papel cálido + tinta +
@@ -228,53 +281,46 @@ cambiar el edificio, edita ese `<svg class="tw">`.
 | `.fl__gh` | el vidrio apagado |
 | `.fl__br` | el ladrillo (patrón `url(#px-brick)`) |
 | `.fl__w` | un vano **encendido**, con `data-o` = orden de encendido |
-| `.tw-pit` `.tw-rebar` `.tw-found` | foso, acero y placa |
-| `.tw-crane` `.cn-mast` `.cn-jib` `.cn-hook` | grúa, por partes |
-| `.tw-scaf` | andamios |
-| `.tw-crown` | coronación (cornisa, tanque, antena) |
-| `.tw-city` `.cl` | entorno y estratos de cielo, con `data-d` de parallax |
-| `.tw-work` | maquinaria y obreros |
+| `.tw-mass` | la silueta del conjunto, detrás |
+| `.tw-crown` | coronación (cornisa, tanque, antena) y el podio |
+| `.tw-terrain` | el suelo |
+| `.tw-dims` `.dm-l` `.dm-c` `.dm-t` | las cotas de nivel y sus cifras |
+| `.tw-mats` `.mt-sw` `.mt-c` `.mt-b` `.mt-v` `.mt-t` | la leyenda de materiales |
+| `.tw-plumb` `.pl-l` `.pl-b` | la plomada y su plomada |
+| `.tw-read` `.rd-rail` `.rd-box` `.rd-r` `.rd-k` | la inspección: la guía y las cinco casillas |
+| `.tw-scaf` `.sf-v` `.sf-h` `.sf-b` | el andamio: montantes, travesaños y cruces |
+| `.tw-hoist` `.ho-m` `.ho-b` | el mástil del hoist |
+| `.ho-cab` `.ho-p` `.ho-r` | la plataforma de carga |
+| `.tw-fix` `.fx-crack` `.fx-old` `.fx-new` | la reparación: grieta, paño viejo y paño nuevo |
+| `.wk-off` `.wk-h` `.wk-b` `.wk-l` | el oficial de obra |
+| `.tw-seal` `.sl-b` `.sl-l` `.sl-t` | el sello de garantía estructural |
+| `.tw-city` `.ct-b` `.ct-bb` | el entorno |
+| `.tw-clouds` `.cl` | estratos de cielo, con `data-d` de parallax |
 
 Cambiar el número de pisos = duplicar o borrar `<g class="fl">`. El orden
-en el DOM no importa: `Scrolly` los reordena por altura, y el andamiaje sube
-como en una grúa real. Las cotas (`.tw-dims`) son texto suelto: ajústalas a
-mano si cambias la altura del piso.
+en el DOM no importa: `Scrolly` los reordena por altura. Las cotas
+(`.tw-dims`) son texto suelto: ajústalas a mano si cambias la altura del
+piso.
 
 Cambiar el encuadre = el `viewBox="0 0 700 900"` y `preserveAspectRatio`.
 El lienzo es vertical a propósito: la columna de la escena es más alta que
 ancha. `xMidYMax slice` recorta lo justo y ancla el terreno abajo.
 
-### Regenerar el dibujo desde código
+> **Ojo con el recorte.** La lámina no se ve entera: en escritorio el
+> `slice` deja fuera unas 90 unidades por cada lado (x de 90 a 610). Los
+> elementos que tienen que verse —la leyenda, el sello, las cotas, el sol—
+> están dentro de esa franja. Si añades algo nuevo, comprueba dónde cae.
 
-El SVG es determinista y sale de un generador de ~200 líneas (sembrado con
-un LCG, así que las ventanas siempre se encienden en el mismo orden). La
-lógica, para referencia:
-
-```js
-const G = 760, FH = 15, W = 700, H = 900;
-const TOWERS = [
-  { id:'t1', x:305, w:90, n:24, b:5 },   // Chapinero Alto
-  { id:'t2', x:195, w:90, n:18, b:4 },   // Santa Ana
-  { id:'t3', x:420, w:80, n:12, b:4 },   // Calle 100
-  { id:'pb', x:175, w:350, n:2,  b:10 }  // podio comercial
-];
-// por cada torre y cada piso:
-//   losa  y = G - (i+1)*FH + FH - 2,  alto 2
-//   vidrio y = G - (i+1)*FH + 2.5,     alto 7
-//   ladrillo = el vidrio con fill="url(#px-brick)"
-//   vanos   = b rectángulos de (w - 2*pad)/b de ancho, encendidos al azar
-```
-
-Para volver a generarlo: escribe el generador, vuelca el SVG a un archivo y
-sustituye el bloque `<svg class="tw">…</svg>` de `index.html`. Recuerda
-comprobar que el SVG sigue siendo XML válido.
+> **Ojo con lo que se esconde.** En `.st-armed` se ocultan los **hijos**, no
+> el padre: si se oculta un grupo y la línea de tiempo anima a sus hijos,
+> el grupo se queda en 0 y los hijos no se ven nunca. Ya pasó una vez.
 
 ### Cambiarlo por una secuencia de frames (opción B)
 
-Si más adelante consigues renders reales, esta es la ruta. El módulo no lo
+Si algún día consigues renders reales, esta es la ruta. El módulo no lo
 trae implementado, pero el sitio no lo necesita:
 
-1. **Exporta los frames** desde tu renders o video:
+1. **Exporta los frames** desde tus renders o tu video:
 
    ```bash
    ffmpeg -i obra.mp4 -vf "fps=12,scale=1400:-2" -q:v 4 frames/%04d.webp
@@ -316,7 +362,7 @@ De más a menos invasivo:
 
 | Quiero | Cómo |
 |---|---|
-| **Apagarla un rato, sin tocar código** | Playwright/Puppeteer con `reducedMotion:'reduce'`, o el ajuste del sistema. La lámina se queda estática con la obra terminada. |
+| **Apagarla un rato, sin tocar código** | Playwright/Puppeteer con `reducedMotion:'reduce'`, o el ajuste del sistema. La lámina se queda estática con la torre entregada. |
 | **Apagarla para quien tenga movimiento reducido** | Ya está hecho: el script del `<head>` no añade `.st`, y `Scrolly.watchMotion()` reevalúa si la preferencia cambia con la página abierta. |
 | **Apagarla del todo** | Borra las dos líneas de `<script>` de GSAP en el final de `index.html`. El resto del sitio sigue igual. |
 | **Convertir la escena en una sección normal** | Quita `st` del script del `<head>` y `Scrolly.init()` del arranque. Los paneles quedan apilados y la lámina, como una imagen de 30rem de ancho. |
@@ -334,6 +380,8 @@ proyectos, las fichas y el formulario son independientes de `Scrolly`.
   portada completa; la lámina es una imagen con `<title>` y `<desc>`.
   (Las otras cuatro rutas sí necesitan JavaScript: el router es por hash
   desde el principio del proyecto, no es un cambio de este trabajo.)
+- **Sin GSAP**: `Scrolly.start()` quita la clase `.st` y la lámina vuelve a
+  su estado estático. La escena se ve entera y los paneles, en columna.
 - **`prefers-reduced-motion`**: sin animación, sin scroll anclado, con
   `will-change` anulado. Si la preferencia cambia con la página abierta, la
   escena se arma o se desarma en caliente.
@@ -341,15 +389,18 @@ proyectos, las fichas y el formulario son independientes de `Scrolly`.
   `<nav>` con `<button>` reales y `aria-current`. El HUD es `aria-hidden`
   porque su información ya está en el `<h3>` del panel. El SVG lleva
   `role="img"` con `<title>`/`<desc>`. La jerarquía es `h1` (hero) → `h2`
-  (umbral de la escena) → `h3` (cada etapa) → `h3` (CTA final).
+  (umbral de la escena) → `h3` (cada revisión) → `h3` (CTA final).
 - **Contraste**: los paneles nunca cambian de fondo —solo la lámina—, así
   que el AA se mantiene incluso en la etapa nocturna. Por eso el HUD lleva
   fondo de papel.
+- **En móvil se retiran** las cotas, las casillas de inspección y la
+  leyenda de materiales: la lámina se ve al 50 % y un rótulo de 9 px queda
+  en 4,5 px. No se lee, y algo que no se lee no debe estar.
 - **Impresión**: la lámina y el HUD se ocultan; los paneles salen como
   texto normal.
-- **`dvh` en todo el escenario**, `ScrollTrigger.config({ignoreMobileResize:true})`
-  y re-medición en `orientationchange`, para la barra de direcciones del
-  móvil.
+- **`dvh` en todo el escenario** (con su respaldo en `@supports`),
+  `ScrollTrigger.config({ignoreMobileResize:true})` y re-medición en
+  `orientationchange`, para la barra de direcciones del móvil.
 
 ## 9. Rendimiento
 
@@ -399,4 +450,4 @@ gsap.ticker.lagSmoothing(0);
 ```
 
 **No se usa Three.js ni `<canvas>`**: para una ilustración de línea, el SVG
-es más ligero, escala sin pérdida, se estilea con CSS y se difumina.
+es más ligero, escala sin pérdida, se estila con CSS y se difumina.

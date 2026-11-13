@@ -4,8 +4,8 @@ La portada abre un edificio construyéndose solo con grúa, en 3D, que se gira
 con el ratón y responde al clic. Todo está en **`stage.js`**, que es un motor
 propio sobre `<canvas>` 2D.
 
-No es Three.js, ni WebGL, ni un `.splinecode` de nadie. Son unos 500
-primitivas dibujadas a mano en 1,66 ms por fotograma.
+No es Three.js, ni WebGL, ni un `.splinecode` de nadie. Son unas 400
+primitivas dibujadas a mano en 0,7 ms por fotograma.
 
 ---
 
@@ -47,19 +47,21 @@ Son cuatro ideas y ninguna más:
    hace falta.
 
 4. **Reutilizar buffers.** `P4` es un `Float64Array` de ocho posiciones que
-   se rellena in situ. Antes `paint()` creaba unos 2 000 arrays por
-   fotograma y el recolector los barría en pleno bucle de animación.
+   se rellena in situ. Antes `paint()` creaba 2 000 arrays por frame.
 
 ### Paleta
 
-Los colores se leen de los tokens del CSS (`--ink`, `--ink-3`, `--accent`) con
-`getComputedStyle`, así que el modo noche no necesita código: se cambia el
-atributo `data-theme`, `Theme` emite `cm:theme` y la escena relee y repinta.
+Los colores se leen de los tokens del CSS (`--ink`, `--ink-3`, `--accent`)
+con `getComputedStyle`. No hay sistema de temas, así que la paleta se lee una
+sola vez al arrancar.
 
 `rgba()` tiene una **caché**. Se llama una vez por primitiva y fotograma —
-unas quinientas—, y sin caché eran quinientas cadenas nuevas y quinientos
-parseos de color por fotograma. En móvil con la CPU ×4 eso costaba la mitad
-del presupuesto de fotograma.
+unas cuatrocientas—, y sin caché eran cuatrocientas cadenas nuevas y
+cuatrocientos parseos de color en cada fotograma. En móvil con la CPU ×4 eso
+costaba la mitad del presupuesto de fotograma.
+
+Las opacidades del código son literales, así que la caché tiene unas pocas
+entradas y no crece.
 
 ---
 
@@ -77,7 +79,9 @@ Todo sale de `CFG`, al principio del módulo. Una unidad del mundo es un metro.
 | `prebuilt: 9` | pisos que ya están levantados al empezar |
 | `perFloor: 1.15` | segundos por piso |
 | `slew` | a qué puntos va la grúa a buscar cada losa |
-| `dist` | distancia de cámara por formato |
+| `ty: 34` | altura del punto que orbita la cámara |
+| `fit` | el mundo que tiene que verse (ver § 5) |
+| `cartela: 52` | la franja de abajo que ocupa la cartela |
 | `levels` | las cotas que se rotulan |
 
 ### El ciclo de un piso
@@ -138,28 +142,47 @@ Lo que pasa se anuncia por `#stageLive`, que es un `aria-live="polite"`.
 
 ---
 
-## 5. Encaje
+## 5. El encuadre
 
-La cámara orbita el **origen**, no está en el infinito. Todo lo que se ponga
-más lejos de lo que marca `CFG.dist` aparece por detrás del observador y se
-ve como cajas flotando en el aire —que es exactamente lo que pasó con el
-skyline a la primera versión—. Las distancias tienen que estar dentro del
-cilindro de visión.
+**La cámara no se pone a ojo: sale del tamaño del lienzo.** La lámina vive
+en una columna estrecha del hero, de unos 400 px, y su proporción cambia
+entre escritorio, tableta y móvil. Lo único que hay que decidir es **cuánto
+mundo tiene que verse**, y eso está en `CFG.fit`:
 
-| | |
-|---|---|
-| `shift` | 0,60 en pantallas anchas: la torre va al tercio derecho y deja el aire al titular. 0,5 en vertical. |
-| ancho | El escenario se ancla a `.shell`, no al viewport. Por encima de 1408 px —donde `max-width: 88rem` empieza a detener la columna— el lienzo deja de crecer y la escena se ve más pequeña respecto a la página. Es deliberado: mantiene la torre ligada a la retícula en vez de perdida en un monitor grande. |
-| `VY` | 0,62 en escritorio, 0,54 en vertical, donde la cartela va pegada abajo. |
-| `dist` | 200 / 240 / 470 px de escritorio, tableta y móvil. Con `f = 1000`, un piso mide `f/dist` píxeles. |
+```js
+fit: { x0: -56, x1: 44, y0: -8, y1: 96 }
+```
 
-En vertical la escena deja de ser fondo y pasa a ser **una fila más de la
-retícula** del hero, entre el titular y el texto. Detrás del texto era
-ilegible.
+De `-56` (las cifras de las cotas) a `+44` (la grúa), y de `-8` (el suelo por
+debajo de la calle) a `96` (la coronación). Con eso:
 
-Comprobado a 1280, 1440, 1680, 1920, 2560, 1024, 820, 768, 600, 390 y 360:
-en ningún ancho hay solape con el titular, desbordamiento horizontal ni
-hueco muerto al pie del hero.
+```js
+const esc = Math.min((W - 2*m) / (x1 - x0), utilH / (y1 - y0));
+cam.dist = cam.f / esc - CFG.ty * sin(cam.el);
+```
+
+La distancia sale de la escala, y `VY` y `shift` salen de dos correcciones
+que importan:
+
+- **El origen del mundo no se dibuja donde se pone.** La cámara orbita un
+  punto a `ty` de alto, así que el suelo sale por debajo de `H * VY`. Sin
+  corregirlo, la base de la torre se va de la lámina.
+- **El contenido se centra, no el origen.** Las cotas ocupan más sitio a la
+  izquierda que la grúa a la derecha, así que el eje de la torre va a la
+  derecha del centro.
+
+### La franja de la cartela
+
+La cartela (el contador de piso y el botón) ocupa los 52 px de abajo: el
+dibujo nunca entra ahí. Por eso `CFG.cartela` está en el encuadre y no solo
+en el CSS.
+
+### La cámara orbita el origen, no está en el infinito
+
+Todo lo que se ponga más lejos de lo que marca `cam.dist` aparece por detrás
+del observador y se ve como cajas flotando en el aire —que es exactamente lo
+que pasó con el skyline a la primera versión—. Las distancias tienen que
+estar dentro del cilindro de visión, y por eso el barrio va a 27–58 m.
 
 ---
 
@@ -183,17 +206,21 @@ de que la página resuelva la barra de desplazamiento y las fuentes, y si te
 quedas con esa medida el clic deja de funcionar.
 
 En pantallas estrechas el búfer sube a 1,5 en vez de 2. Para una escena de
-líneas es indistinguible y quita el 44 % de los píxeles.
+líneas es indistinguible y quita el 44 % de los píxeles que hay que rellenar.
+
+Además, `size()` **recalcula el encuadre** cada vez que se llama, así que
+el motor también oye el `resize` de la ventana: el lienzo puede no cambiar
+de ancho (está en una columna de ancho fijo) y, aun así, cambiar de formato.
 
 ---
 
 ## 7. El póster
 
-La foto del hero **no se quita nunca**: solo baja a `opacity: 0` cuando ya hay
-un fotograma dibujado. Y lleva `pointer-events: none` siempre —va después del
-canvas en el DOM y se pinta encima, y un elemento transparente **sigue
-recibiendo clics**: sin eso el ratón pasa por encima de una imagen invisible
-y la torre deja de responder.
+La foto del hero **no se quita nunca**: está debajo del lienzo y baja a
+`opacity: 0` cuando ya hay un fotograma dibujado. Y lleva
+`pointer-events: none` siempre —va después del canvas en el DOM y se pinta
+encima, y un elemento transparente **sigue recibiendo clics**: sin eso el
+ratón pasa por encima de una imagen invisible y la torre deja de responder.
 
 Con todo esto, en estos casos lo que se ve es la foto y no hay ningún hueco:
 
@@ -201,6 +228,42 @@ Con todo esto, en estos casos lo que se ve es la foto y no hay ningún hueco:
 - sin soporte de `<canvas>`
 - con `prefers-reduced-motion` (un fotograma con la torre terminada)
 - si el navegador se queda sin contexto
+
+### El fundido
+
+Al salir de pantalla el dibujo se cortaba en seco. Ahora hay un fundido
+corto: el alfa global multiplicado en `rgba()`, con su propio bucle
+`fadeLoop()` a `FADE_MS = 220`, enganchado al `IntersectionObserver` y al
+`visibilitychange`.
+
+**El fundido dura lo que dice.** Antes era exponencial con constante 5,2 y
+eso **no** eran 190 ms de un extremo a otro: la constante es el tiempo en el
+que se recorre el 63 %, así que el fundido tardaba un segundo en terminar.
+Medido con rAF dentro de la página: 963 ms reales. Ahora es lineal y dura
+220 ms; medido otra vez: **216 ms** (la diferencia es el muestreo de 60 fps).
+
+Tres cosas que costaron un bug cada una:
+
+1. **La caché de `rgba()` es la que hace viable esto.** Sin cuantizar el
+   alfa a 32 pasos serían ~600 cadenas nuevas por segundo solo del fundido,
+   que es justo lo que la caché existe para evitar. El coste es 32 ×
+   colores ≈ 600 entradas, y se puede vaciar en el cambio de paleta.
+2. **Los objetivos del fundido son 0 y 1 a propósito.** El póster sigue
+   debajo, y con el lienzo transparente se ve igual de bien, así que solo
+   hay que pintar los intermedios.
+3. **El lienzo no debe cambiar de `opacity`.** La transición CSS de
+   `--t-slow` (0,72 s) competía con los 190 ms del alfa por píxel y el
+   resultado real era un fundido lento. Ahora `is-live` mantiene
+   `opacity:1` y la transición CSS solo sirve para el reveal inicial. Como
+   el póster está **debajo** del lienzo (`z-index` 0 contra 1), el
+   desvanecimiento es un fundido cruzado; por eso el póster sube en 190 ms
+   y no en `--t-slow`, que si no dejarían medio segundo de hueco.
+
+Bug que sigue vivo si se toca `fadeLoop()`: `is-fading` se quita
+**siempre** que el fundido llega a 1, nunca solo cuando el bucle principal
+está parado. Al volver a entrar corren los dos bucles a la vez, y con la
+condición de "si no hay `raf`" la clase se quedaba puesta con el lienzo ya
+opaco: invisible.
 
 ---
 
@@ -219,9 +282,10 @@ batería:
 
 ## 9. Compatibilidad
 
-El motor no usa nada que sea exótico: ni `?.`, `??`, `flat()` ni `globalThis`: solo
-`Array.from`, `padStart`, `Map`, `ResizeObserver`, `IntersectionObserver` y
-canvas 2D. Se puede ver en `script.js` y `stage.js` con un grep.
+El motor no usa nada que sea exótico: ni `?.`, `??`, `flat()` ni
+`globalThis`: solo `Array.from`, `padStart`, `Map`, `ResizeObserver`,
+`IntersectionObserver` y canvas 2D. Se puede ver en `script.js` y `stage.js`
+con un grep.
 
 En el CSS hay dos cosas que **no** están en todas partes, y su respaldo está
 detrás de `@supports` en lugar de ser una cascada:
@@ -241,7 +305,7 @@ funciona** en ninguno de los dos casos, y es un error fácil de cometer:
 - En `background: color-mix(... var(...))`, el `var()` la convierte en
   declaración *pendiente de sustitución*: no se descarta al parsear como
   haría una función desconocida, llega a tiempo de cómputo, falla ahí y queda
-  como `unset` — es decir, **gana** y pone el fondo a transparente.
+  como `unset` — o sea, **gana**.
 
 Cómo se comprueba, sin tener esos navegadores: interceptar `styles.css` y
 servirlo con `dvh` y `color-mix` renombrados. Un navegador que no soporta una
@@ -262,13 +326,10 @@ mismo, la barra conserva su velo y las siete etapas se recorren igual.
 
 Coste de `build() + paint()` medido en el propio código:
 
-| | ms por fotograma |
-|---|---|
-| Escritorio 1440×900 | **1,66** |
-| Móvil 390×844 con CPU ×4 | **5,48** |
-
-Ese 5,48 con la CPU estrangulada ×4 son unos 1,4 ms en un móvil sin
-estrangular.
+| | ms por fotograma (mediana) | p95 | primitivas |
+|---|---|---|---|
+| Escritorio 1440×900 | **0,70** | 1,10 | 394 |
+| Móvil 390×844 con CPU ×4 | **3,50** | 6,40 | 391 |
 
 Lo que lo sostiene, y que conviene no deshacer sin motivo:
 
@@ -282,7 +343,33 @@ Lo que lo sostiene, y que conviene no deshacer sin motivo:
 
 ---
 
-## 11. Si quieres cambiarla
+## 11. Contraste del dibujo
+
+Las líneas del canvas no son texto, así que el WCAG no les aplica, pero un
+trazo que no se ve no es un trazo. El suelo se puso **medido**, no a ojo: se
+lee el lienzo pixel a pixel, se compone cada trazo sobre el fondo real de
+la lámina (`#E9E6DD`) y se calcula la razón de contraste.
+
+| | Antes | Ahora |
+|---|---|---|
+| Trazo más flojo (núcleo) | 1,27:1 | **1,55:1** (p5) |
+| Mediana | 1,91:1 | **2,18:1** |
+| Por debajo de 1,40:1 | 12 % | **0,2 %** |
+
+El cambio de fondo fue uno solo y afecta a todos los trazos tenues:
+`st.faint()` usaba `--ink-3` (gris de marca) y ahora usa tinta. Con el gris
+al 26 % de alfa el trazo quedaba en 1,35:1 —no se veía—; con la misma
+tinta al mismo alfa, 1,75:1. La regla que quedó:
+
+> Ningún trazo visible por debajo de 1,4:1 sobre el papel de la lámina; los
+> estructurales, por encima de 3:1.
+
+La lámina SVG de la escena de scroll se midió con el mismo criterio: su
+trazo más flojo está en 1,76:1 y ninguno baja de 1,40:1.
+
+---
+
+## 12. Si quieres cambiarla
 
 | Quiero… | Dónde |
 |---|---|
@@ -290,8 +377,7 @@ Lo que lo sostiene, y que conviene no deshacer sin motivo:
 | Que la grúa llegue a otro sitio | `CFG.crane` y `CFG.slew` |
 | Más o menos rápido | `CFG.perFloor` |
 | Que empiece más construida | `CFG.prebuilt` |
-| Outro encuadre | `CFG.dist`, `shift`, `VY` |
-| Otras cotas | `CFG.levels` |
+| Otro encuadre | `CFG.fit` (qué mundo se ve) |
 | Otros colores | los tokens; el código no lleva ninguno |
 | Quitar la escena | borra `.hero__stage` del HTML y el `<script src="stage.js">`. La foto sigue ahí |
 
