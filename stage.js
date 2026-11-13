@@ -52,7 +52,8 @@ const CFG = {
   slab: 0.5,                /* canto de la losa */
   tower: 22,                /* lado de la planta */
   podium: { w: 34, d: 28, h: 7.2 },
-  crane: { x: 27, z: 5, h: 74, jib: 50, cjib: 18, half: 1.8, apex: 9 },
+  crane: { x: 22, z: 5, h: 74, jib: 44, cjib: 14, half: 1.8, apex: 9 },
+  ty: 34,                  /* altura del punto que orbita la cámara */
 
   /* Se levantan ya hechas: la grúa trabaja arriba del todo, que es
      lo que se ve en una obra real, y el visitante encuentra una torre
@@ -66,12 +67,17 @@ const CFG = {
   slew: [0, 0.34, -0.30, 0.17, -0.13, 0.07],
 
   orbit: { minAz: -1.5, maxAz: 1.5, minEl: 0.05, maxEl: 0.85 },
-  /* La distancia es lo que decide el peso de la escena en la página.
-     Con f = 1000, un piso del edificio mide f/dist píxeles: a 185 son
-     unos 5,4 y las 24 plantas ocupan algo más de la mitad del alto.
-     Antes de que se bisturice con esta escena hay que sacar un plano
-     de la portada, y el plano dice la distancia. */
-  dist: { desktop: 200, tablet: 240, phone: 470, still: 190 },
+  /* Encuadre. La lámina tiene que caber entera y su proporción cambia
+     con el formato, así que la cámara no se pone a ojo: se deriva del
+     tamaño del lienzo. Estas medidas son el mundo que tiene que verse,
+     en metros, ytaken del lienzo sale la distancia.
+
+     · x: de -58 (las cifras de las cotas) a +42 (la grúa).
+     · y: de -12 (el suelo por debajo de la calle) a +96 (la coronación).
+     · margen: el 8 % de aire alrededor, para que nada roce el borde. */
+  fit: { x0: -56, x1: 44, y0: -8, y1: 96 },
+  /* La franja de abajo la ocupa la cartela: el dibujo nunca entra ahí. */
+  cartela: 52,
   levels: [0, 12, 20, 24]   /* cotas que se rotulan */
 };
 
@@ -137,7 +143,6 @@ function readPalette() {
   const g = (n) => cs.getPropertyValue(n).trim();
   P.ink = norm(g('--ink') || '#16150F');
   P.ink3 = norm(g('--ink-3') || '#6C6858');
-  P.ink2 = norm(g('--ink-2') || '#3B392E');
   P.accent = norm(g('--accent') || '#C23709');
   rgbaCache.clear();
 }
@@ -146,7 +151,7 @@ readPalette();
 /* ------------------------------------------------------------
    4. CÁMARA
    ------------------------------------------------------------ */
-const cam = { az: -0.62, el: 0.28, dist: CFG.dist.desktop, f: 1000, ty: 34 };
+const cam = { az: -0.62, el: 0.28, dist: 270, f: 1000, ty: CFG.ty };
 let W = 0, H = 0, dpr = 1, shift = 0.5;
 /* Dónde cae el origen en pantalla, en fracción del alto.
    VX era el desplazamiento horizontal y no se usa: el reparto se
@@ -276,7 +281,11 @@ function stepCrane(dt) {
    7. LA ESCENA
    ------------------------------------------------------------ */
 const st = {
-  faint:  function (a) { return { w: 1, c: P.ink3, a: a }; },
+  /* faint: trazo tenue pero de TINTA, no de gris. Con el gris de marca
+     (--ink-3) una línea al 26 % quedaba en 1,35:1 sobre el papel: no se
+     veía. Con tinta al mismo alfa, 1,75:1. Medido sobre el lienzo real,
+     no a ojo. */
+  faint:  function (a) { return { w: 1, c: P.ink, a: a }; },
   hair:   function (a) { return { w: 1, c: P.ink,  a: a }; },
   heavy:  function (a) { return { w: 1.4, c: P.ink, a: a }; },
   red:    function (a, w) { return { w: w || 1.5, c: P.accent, a: a, accent: true }; }
@@ -289,7 +298,7 @@ function ground() {
   const R = 92, n = 8;
   for (let i = -n; i <= n; i++) {
     const o = i * (R / n), major = i % 5 === 0;
-    const s = st.faint(major ? 0.24 : 0.1);
+    const s = st.faint(major ? 0.40 : 0.26);
     seg(-R, 0, o, R, 0, o, s);
     seg(o, 0, -R, o, 0, R, s);
   }
@@ -297,7 +306,7 @@ function ground() {
 
 function city() {
   /* El barrio que rodea la obra. Tres decisiones y ninguna es libre:
-     · cerca. La cámara orbita el ORIGIN a CFG.dist metros, así que
+     · cerca. La cámara orbita el ORIGIN a cam.dist metros, así que
        "lejos" significa dentro del cilindro de visión, no un radio
        grande: a 150 m quedaban delante del observador y se leían como
        cajas gigantes flotando sobre el titular.
@@ -317,7 +326,7 @@ function city() {
        coronación dan la misma escala que una caja rellena y cuestan
        una fracción: el relleno de 84 cuadriláteros por frame era de
        lo más caro de la escena. */
-    const st2 = { w: 1, c: P.ink, a: 0.15 };
+    const st2 = { w: 1, c: P.ink, a: 0.28 };
     const x0 = bx - w / 2, x1 = bx + w / 2, z0 = bz - d / 2, z1 = bz + d / 2;
     seg(x0, 0, z0, x0, h, z0, st2); seg(x1, 0, z0, x1, h, z0, st2);
     seg(x0, 0, z1, x0, h, z1, st2); seg(x1, 0, z1, x1, h, z1, st2);
@@ -330,8 +339,8 @@ function podium() {
   box(0, p.h / 2, 0, p.w, p.h, p.d, { w: 1, c: P.ink, a: 0.42, fill: rgba(P.ink, 0.06) }, true);
   ring(0, p.h, 0, p.w, p.d, st.hair(0.36));
   /* Losas de la losa de cimentación, insinuadas bajo el podio. */
-  ring(0, 0.35, 0, p.w * 0.78, p.d * 0.78, st.faint(0.26));
-  ring(0, 0.9, 0, p.w * 0.5, p.d * 0.5, st.faint(0.18));
+  ring(0, 0.35, 0, p.w * 0.78, p.d * 0.78, st.faint(0.34));
+  ring(0, 0.9, 0, p.w * 0.5, p.d * 0.5, st.faint(0.30));
 }
 
 function floorTop(i) { return CFG.podium.h + (i + 1) * CFG.fh; }
@@ -354,7 +363,7 @@ function frame(inBuild) {
      no se lea como un pelo suelto. */
   for (let i = 0; i < inBuild; i++) {
     if (i % 4) continue;
-    ring(0, y0 + i * CFG.fh + CFG.slab, 0, CFG.tower - 0.6, CFG.tower - 0.6, st.faint(0.16));
+    ring(0, y0 + i * CFG.fh + CFG.slab, 0, CFG.tower - 0.6, CFG.tower - 0.6, st.faint(0.30));
   }
 
   /* Núcleo de circulação */
@@ -407,7 +416,7 @@ function scaffold() {
   const half = CFG.tower / 2 + 1.3;
   const y0 = CFG.podium.h + Math.floor(work.built) * CFG.fh;
   const y1 = min(y0 + CFG.fh * 2, floorTop(CFG.floors));
-  const post = st.faint(0.3), tie = st.faint(0.16);
+  const post = st.faint(0.34), tie = st.faint(0.30);
   const cs = [[-half, -half], [half, -half], [half, half], [-half, half]];
   /* Montantes y, en cada nivel, el travesaño de la plataforma. Sin los
      travesaños el andamio era una caja de alambre suelta alrededor de
@@ -522,7 +531,7 @@ function dims() {
     seg(lx - 2.4, y - 1.1, -3, lx - 2.4, y + 1.1, -3, st.hair(0.36));
     seg(lx + 2.4, y - 1.1, -3, lx + 2.4, y + 1.1, -3, st.hair(0.36));
     /* Abandonoía hasta el fuste */
-    seg(lx + 2.4, y, -3, edge, y, -CFG.tower / 2, st.faint(0.26));
+    seg(lx + 2.4, y, -3, edge, y, -CFG.tower / 2, st.faint(0.34));
     label(lx - 3.4, y, -3, '+' + y.toFixed(1), { w: 10, c: P.ink3, a: 0.9, mid: true });
   }
 }
@@ -618,15 +627,19 @@ let frames = 0, framesSlot = -1;
    debajo y con el lienzo transparente se ve igual de bien, así que
    solo hace falta pintar los intermedios. Por eso el bucle sigue vivo
    durante el fundido y se apaga al llegar a 1 (ver stopFade()). */
-let fade = 1, fadeTo = 1, fadeRAF = 0, fadeLast = 0;
-const FADE_RATE = 5.2;          /* 1 / s: unos 190 ms de un extremo a otro */
+let fade = 1, fadeTo = 1, fadeRAF = 0, fadeFrom = 1, fadeStart = 0;
+/* El fundido dura lo que dice: 220 ms, lineales. Antes era exponencial
+   con constante 5,2 y eso NO eran 190 ms de un extremo a otro: la
+   constante es el tiempo en el que se recorre el 63 %, así que el
+   fundido tardaba un segundo en terminar. Medido con rAF dentro de la
+   página (ver AVANCES.md): 963 ms reales. */
+const FADE_MS = 220;
 
 function fadeLoop(now) {
   fadeRAF = requestAnimationFrame(fadeLoop);
-  const dt = min((now - fadeLast) / 1000, 0.05);
-  fadeLast = now;
-  const d = fadeTo - fade;
-  if (Math.abs(d) < 0.004) {
+  const p = min(1, (now - fadeStart) / FADE_MS);
+  fade = fadeFrom + (fadeTo - fadeFrom) * p;
+  if (p >= 1) {
     fade = fadeTo;
     cancelAnimationFrame(fadeRAF); fadeRAF = 0;
     /* is-fading se retira SIEMPRE que el fundido llega a 1, no solo
@@ -637,7 +650,6 @@ function fadeLoop(now) {
     if (fade === 1) root.classList.remove('is-fading');
     return;
   }
-  fade += d * min(1, dt * FADE_RATE);
   build(); paint();
 }
 /* Se apaga solo cuando ya no queda nada que dibujar: durante el
@@ -646,9 +658,11 @@ function fadeLoop(now) {
 function fadeTo_(v) {
   if (reduced) { fade = 1; fadeTo = 1; build(); paint(); return; }
   if (v === fade && !fadeRAF) return;
+  fadeFrom = fade;              /* si se interrumpe, sigue desde donde está */
   fadeTo = v;
+  fadeStart = performance.now();
   if (v < 1) root.classList.add('is-fading');
-  if (!fadeRAF) { fadeLast = performance.now(); fadeRAF = requestAnimationFrame(fadeLoop); }
+  if (!fadeRAF) fadeRAF = requestAnimationFrame(fadeLoop);
 }
 
 function loop(now) {
@@ -878,17 +892,22 @@ function size() {
   canvas.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  /* La torre se va a la derecha en pantallas anchas para dejarle el
-     aire limpio al titular, y se centra cuando ya no hay columna al
-     lado. */
-  shift = W >= 900 ? 0.60 : 0.5;
-  /* En vertical la escena es una banda con la cartela pegada abajo: el
-     origen sube para que la base de la torre no quede debajo. */
-  VY = W >= 900 ? 0.62 : 0.54;
-  cam.dist = reduced ? CFG.dist.still
-            : W >= 1100 ? CFG.dist.desktop
-            : W >= 640  ? CFG.dist.tablet
-                        : CFG.dist.phone;
+  /* El encuadre sale del tamaño del lienzo, no de una tabla de
+     formatos: la lámina es una columna estrecha dentro del hero y su
+     proporción cambia entre escritorio, tableta y móvil. Lo único que
+     hay que decidir es cuánto mundo tiene que verse (CFG.fit) y que no
+     entre ni en la cartela ni en los bordes. */
+  const f = CFG.fit, m = 10;
+  const utilH = Math.max(H - CFG.cartela - 2 * m, 60);
+  const esc = Math.min((W - 2 * m) / (f.x1 - f.x0), utilH / (f.y1 - f.y0));
+  cam.dist = clamp(cam.f / esc - CFG.ty * sin(cam.el), 150, 900);
+  /* El origen del mundo (el suelo) no se dibuja donde se pone: la
+     cámara orbita un punto a CFG.ty de alto, así que el suelo sale por
+     debajo. Se compensa para que el suelo caiga justo encima de la
+     cartela. */
+  const sg = cam.f / (cam.dist + CFG.ty * sin(cam.el));
+  VY = (H - CFG.cartela - m - CFG.ty * cos(cam.el) * sg) / H;
+  shift = 0.5 - ((f.x0 + f.x1) / 2) * sg / W;
   return true;
 }
 
@@ -922,6 +941,10 @@ function boot() {
      puesto ya, el primer tamaño real la despierta. */
   ro = new ResizeObserver(onResize);
   ro.observe(canvas);
+  /* El encuadre depende del ancho de la página, así que también hay que
+     oírla: con el lienzo en una columna de ancho fijo, un cambio de
+     ventana no lo redimensiona pero sí cambia el formato. */
+  window.addEventListener('resize', onResize);
   if (!size()) return;
 
   if (reduced) {
@@ -968,8 +991,6 @@ function boot() {
     else if (inView()) { fadeTo_(1); start(); }
   });
 
-  /* El tema cambia la paleta: hay que releerla y repintar. */
-  document.addEventListener('cm:theme', () => { readPalette(); build(); paint(); });
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

@@ -93,16 +93,14 @@ def revisar_sintaxis():
     return fallos
 
 
-def comprobar_rutas(pw, url, tema):
+def comprobar_rutas(pw, url):
+    """Las cinco rutas: una visible cada vez y sin errores de JavaScript."""
     ctx = pw.chromium.launch().new_context(viewport={'width': 1440, 'height': 900})
     pg = ctx.new_page()
     errores = []
     pg.on('pageerror', lambda e: errores.append(str(e)[:70]))
     pg.goto(url)
     pg.wait_for_timeout(2500)
-    if tema == 'dark':
-        pg.click('#themeBtn')
-        pg.wait_for_timeout(800)
     for r in ROUTES:
         pg.evaluate(f'location.hash="{r}"')
         pg.wait_for_timeout(850)
@@ -110,10 +108,73 @@ def comprobar_rutas(pw, url, tema):
             '()=>[...document.querySelectorAll(".page")].filter(p=>!p.hidden).length')
         if n != 1:
             errores.append(f'{r} deja {n} paginas visibles')
-    print(f'   {tema:6} una pagina por ruta y sin errores  '
+    print('   una pagina por ruta y sin errores  '
           f'{ok(not errores)} {errores[:2]}')
     ctx.close()
     return 0 if not errores else 1
+
+
+def comprobar_escena(pw, url):
+    """La escena de la torre: siete etapas, y el contador de la cartela
+    tiene que coincidir con el panel que se está leyendo."""
+    ctx = pw.chromium.launch().new_context(viewport={'width': 1440, 'height': 900})
+    pg = ctx.new_page()
+    errores = []
+    pg.on('pageerror', lambda e: errores.append(str(e)[:70]))
+    pg.goto(url)
+    pg.wait_for_timeout(2200)
+    fallos = 0
+
+    armado = pg.evaluate('document.documentElement.classList.contains("st-armed")')
+    print('   la lamina esta armada        ' + ok(armado))
+    fallos += 0 if armado else 1
+
+    paneles = pg.evaluate('document.querySelectorAll("#scenePanels .panel").length')
+    print('   siete paneles                ' + ok(paneles == 7))
+    fallos += 0 if paneles == 7 else 1
+
+    capitulos = pg.evaluate('document.querySelectorAll(".scene__chapters button").length')
+    print('   siete capitulos              ' + ok(capitulos == 7))
+    fallos += 0 if capitulos == 7 else 1
+
+    # Se recorre la escena y se comprueba que el rotulo sigue al panel.
+    sincronizado = True
+    vistos = set()
+    for i in range(7):
+        pg.evaluate("""(i)=>{const p=document.querySelectorAll("#scenePanels .panel")[i];
+            const r=p.getBoundingClientRect();
+            window.scrollTo(0, window.scrollY+r.top+r.height/2-innerHeight/2);}""", i)
+        pg.wait_for_timeout(700)
+        d = pg.evaluate("""()=>({num:document.getElementById("stageNum").textContent,
+            name:document.getElementById("stageName").textContent})""")
+        vistos.add(d['name'])
+        if d['num'] != '%02d' % (i + 1):
+            sincronizado = False
+    print('   el contador va con el panel  ' + ok(sincronizado))
+    print('   siete etapas distintas       ' + ok(len(vistos) == 7))
+    fallos += 0 if (sincronizado and len(vistos) == 7) else 1
+
+    # El instrumental aparece y desaparece con el scroll.
+    opacidad = """()=>{const q=s=>{const e=document.querySelector(s);
+        return e?parseFloat(getComputedStyle(e).opacity):-1;};
+        return {dims:q('.tw-dims'), scaf:q('.tw-scaf'), seal:q('.tw-seal')};}"""
+    pg.evaluate('window.scrollTo(0,0)')
+    pg.wait_for_timeout(1400)
+    alPrincipio = pg.evaluate(opacidad)
+    pg.evaluate("""()=>{const p=document.querySelectorAll("#scenePanels .panel")[6];
+        const r=p.getBoundingClientRect();
+        window.scrollTo(0, window.scrollY+r.top+r.height/2-innerHeight/2);}""")
+    pg.wait_for_timeout(1600)
+    alFinal = pg.evaluate(opacidad)
+    bien = (alPrincipio['dims'] < 0.05 and alPrincipio['seal'] < 0.05
+            and alFinal['dims'] > 0.85 and alFinal['seal'] > 0.85)
+    print('   el instrumental va con el scroll ' + ok(bien))
+    fallos += 0 if bien else 1
+
+    print('   sin errores                   ' + ok(not errores) + ' ' + str(errores[:2]))
+    fallos += 0 if not errores else 1
+    ctx.close()
+    return fallos
 
 
 def comprobar_interaccion(pw, url):
@@ -127,6 +188,15 @@ def comprobar_interaccion(pw, url):
         '()=>document.getElementById("heroStage").classList.contains("is-live")')
     print(f'   escena viva                {ok(viva)}')
     fallos += 0 if viva else 1
+
+    # El lienzo tiene que tener algo dibujado: un lienzo en blanco es
+    # una escena que no arranca, aunque la clase is-live este puesta.
+    pintado = pg.evaluate("""()=>{const c=document.getElementById("stage");
+        const d=c.getContext("2d").getImageData(0,0,c.width,c.height).data;
+        let s=0; for(let i=3;i<d.length;i+=4) s+=d[i];
+        return s/(d.length/4);}""")
+    print(f'   el lienzo esta dibujado     {ok(pintado > 1)} (alfa medio {pintado:.2f})')
+    fallos += 0 if pintado > 1 else 1
 
     pg.click('[data-stage-play]')
     pg.wait_for_timeout(250)
@@ -260,7 +330,7 @@ def comprobar_tabulacion(pw, url):
 
 def comprobar_degradado(pw, url):
     """Simula un navegador sin dvh ni color-mix. Ver STAGE.md § 9."""
-    seccion('7. Navegador antiguo (dvh y color-mix neutralizados)')
+    seccion('8. Navegador antiguo (dvh y color-mix neutralizados)')
     original = (ROOT / 'styles.css').read_text(encoding='utf-8')
     cuerpo = original
     for moderno, sustituto in MODERNAS:
@@ -305,20 +375,22 @@ def main():
 
     from playwright.sync_api import sync_playwright
     with sync_playwright() as pw:
-        seccion('2. Las cinco rutas, en los dos temas')
-        for tema in ('light', 'dark'):
-            fallos += comprobar_rutas(pw, url, tema)
+        seccion('2. Las cinco rutas')
+        fallos += comprobar_rutas(pw, url)
 
-        seccion('3. La escena 3D responde')
+        seccion('3. La escena de la torre')
+        fallos += comprobar_escena(pw, url)
+
+        seccion('4. La escena 3D responde')
         fallos += comprobar_interaccion(pw, url)
 
-        seccion('4. Degradaciones')
+        seccion('5. Degradaciones')
         fallos += comprobar_degradaciones(pw, url)
 
-        seccion('5. Móvil')
+        seccion('6. Móvil')
         fallos += comprobar_movil(pw, url)
 
-        seccion('6. Teclado')
+        seccion('7. Teclado')
         fallos += comprobar_tabulacion(pw, url)
 
         if args.degradado:

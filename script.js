@@ -49,7 +49,7 @@ const { $, $$, esc, raf, trap, money } = U;
    ========================================================= */
 const DATA = [
   {
-    id: 'chapinero-alto', n: '01',
+    id: 'chapinero-alto', alt: 'Fachada de un edificio residencial de ladrillo y balcones', n: '01',
     name: 'Torre Chapinero Alto', cat: 'residencial', status: 'En obra', rawStatus: 'En Construcción',
     loc: 'Chapinero, Bogotá', price: 450000000, area: 78, floors: 24, delivery: 'Q3 2027', progress: 62,
     beds: 2, baths: 2,
@@ -59,7 +59,7 @@ const DATA = [
     amen: ['Gimnasio equipado', 'Terraza panorámica', 'Sala de coworking', 'Paradero de visitantes', 'Salón de fiestas', 'Mascotas permitidas']
   },
   {
-    id: 'santa-ana', n: '02',
+    id: 'santa-ana', alt: 'Vivienda moderna de una planta con piscina y jardín', n: '02',
     name: 'Residencial Santa Ana', cat: 'residencial', status: 'En venta', rawStatus: 'En Venta',
     loc: 'Santa Ana, Bogotá', price: 620000000, area: 95, floors: 18, delivery: 'Entregado Q1 2026', progress: 100,
     beds: 3, baths: 2,
@@ -69,7 +69,7 @@ const DATA = [
     amen: ['LEED Plata', 'Azotea verde', 'Solárium', 'Cicloparking', 'Club familiar', 'Jardineras']
   },
   {
-    id: 'calle-100', n: '03',
+    id: 'calle-100', alt: 'Interior de oficinas con corredor de vidrio y cocina', n: '03',
     name: 'Centro Empresarial Calle 100', cat: 'comercial', status: 'En venta', rawStatus: 'En Venta',
     loc: 'Calle 100, Bogotá', price: 980000000, area: 140, floors: 12, delivery: 'Q4 2026', progress: 88,
     img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1400&auto=format&fit=crop',
@@ -78,7 +78,7 @@ const DATA = [
     amen: ['Pisos completos', 'Fibra óptica dedicada', 'Acceso biométrico', 'Zona de bienestar', 'Sala de juntas', 'Ascensor doble']
   },
   {
-    id: 'alto-usaquen', n: '04',
+    id: 'alto-usaquen', alt: 'Casa moderna de dos plantas al atardecer', n: '04',
     name: 'Alto de Usaquén Residence', cat: 'planos', status: 'Sobre planos', rawStatus: 'Sobre Planos',
     loc: 'Usaquén, Bogotá', price: 390000000, area: 68, floors: 10, delivery: 'Q2 2028', progress: 12,
     beds: 1, baths: 1,
@@ -88,7 +88,7 @@ const DATA = [
     amen: ['Una y dos alcobas', 'Crédito hipotecario', 'Zona tranquila', 'Bodega por unidad', 'Ampliación futura']
   },
   {
-    id: 'plaza-salitre', n: '05',
+    id: 'plaza-salitre', alt: 'Skyline urbano al anochecer', n: '05',
     name: 'Plaza Corporativa Salitre', cat: 'comercial', status: 'En obra', rawStatus: 'En Construcción',
     loc: 'Salitre, Bogotá', price: 1250000000, area: 210, floors: 9, delivery: 'Q1 2028', progress: 41,
     img: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?q=80&w=1400&auto=format&fit=crop',
@@ -97,7 +97,7 @@ const DATA = [
     amen: ['Dos torres', 'Terrazas verdes', 'Generación solar 180 kWp', 'Placa tectónica', 'Estacionamiento visitantes']
   },
   {
-    id: 'reserva-country', n: '06',
+    id: 'reserva-country', alt: 'Sala de estar con sofá, estantería y plantas', n: '06',
     name: 'Reserva del Country', cat: 'planos', status: 'Sobre planos', rawStatus: 'Sobre Planos',
     loc: 'El Country, Bogotá', price: 710000000, area: 102, floors: 14, delivery: 'Q4 2027', progress: 8,
     beds: 3, baths: 3,
@@ -241,7 +241,7 @@ const Index = (function () {
     });
   }
 
-  return { render, filter, init, Peek };
+  return { render, filter, init };
 })();
 
 /* =========================================================
@@ -276,7 +276,7 @@ const Project = (function () {
       '</header>' +
 
       '<figure class="pj__hero">' +
-        '<img src="' + esc(p.img) + '" alt="Fachada de ' + esc(p.name) + '" fetchpriority="high" decoding="async" width="1600" height="900">' +
+        '<img src="' + esc(p.img) + '" alt="' + esc(p.alt) + '" fetchpriority="high" decoding="async" width="1600" height="900">' +
         '<figcaption class="caption"><span class="mono">Fig. ' + p.n + '</span><span>' + esc(p.name) + ' — ' + esc(p.loc) + '.</span></figcaption>' +
       '</figure>' +
 
@@ -382,7 +382,7 @@ const Router = (function () {
     if (main) main.focus({ preventScroll: true });
 
     Reveal.scan();
-    if (route.page === 'inicio') { Scrolly.refresh(); Counters.replay(); }
+    if (route.page === 'inicio') Scrolly.refresh();
   }
 
   function init() {
@@ -535,20 +535,21 @@ const Counters = (function () {
     els.forEach((el) => obs.observe(el));
   }
 
-  /* Al volver a Inicio los números ya quedan en su valor final, no repetimos la animación */
-  function replay() { /* los contadores quedan en su valor final */ }
-
-  return { init, replay };
+  return { init };
 })();
 
 /* =========================================================
-   ESCENA DE CONSTRUCCIÓN
+   ESCENA DE LA TORRE
    Una sola línea de tiempo maestra (GSAP + ScrollTrigger con
-   scrub) gobierna el cielo, la grúa, el terreno, los 56 pisos
-   y las luces. Los paneles de texto no se animan con tweens:
-   su posición en el flujo ya es la sincronía, y su fundido se
+   scrub) gobierna el cielo, el instrumental, el andamio y las
+   luces. Los paneles de texto no se animan con tweens: su
+   posición en el flujo ya es la sincronía, y su fundido se
    calcula con aritmética en el mismo onUpdate para no tener
    un segundo trigger por etapa.
+
+   La torre NO se construye aquí: se entrega en pie y la escena
+   cuenta lo que le pasa en los diez años siguientes. El hero 3D
+   es el que la levanta.
 
    Todo el módulo se apaga solo si no hay GSAP, si el usuario
    pide movimiento reducido o si la escena no está en el DOM.
@@ -561,19 +562,20 @@ const Scrolly = (function () {
        se normalizan. Estructura y Entrega pesan más porque son las
        etapas que mas construyen. */
     stages: [
-      { n: '01', name: 'Terreno',    w: 0.85 },
-      { n: '02', name: 'Excavación', w: 1.00 },
-      { n: '03', name: 'Cimientos',  w: 1.00 },
-      { n: '04', name: 'Estructura', w: 1.55 },
-      { n: '05', name: 'Envolvente', w: 1.25 },
-      { n: '06', name: 'Acabados',   w: 1.00 },
-      { n: '07', name: 'Entrega',    w: 1.35 }
+      { n: '01', name: 'Diagnóstico', w: 0.95 },
+      { n: '02', name: 'Plomada',    w: 1.00 },
+      { n: '03', name: 'Inspección', w: 1.10 },
+      { n: '04', name: 'Andamio',    w: 1.40 },
+      { n: '05', name: 'Ocupación', w: 1.55 },
+      { n: '06', name: 'Reparación', w: 1.20 },
+      { n: '07', name: 'Garantía',   w: 1.35 }
     ],
     /* Cielo: pares [progreso 0-1, color]. Solo se usan los tokens de
-       marca, no hay ningún color nuevo en el sistema. */
-    sky: [[0, '#F2F0EA'], [0.14, '#E9E6DD'], [0.52, '#E9E6DD'],
-          [0.74, '#DCD8CC'], [0.88, '#3B392E'], [1, '#16150F']],
-    night: 0.90,   /* a partir de aquí la línea pasa a modo noche */
+       marca, no hay ningún color nuevo en el sistema. El atardecer
+       cae en la etapa 05, que es cuando se encienden las ventanas. */
+    sky: [[0, '#F2F0EA'], [0.20, '#E9E6DD'], [0.50, '#E9E6DD'],
+          [0.64, '#DCD8CC'], [0.80, '#3B392E'], [1, '#16150F']],
+    night: 0.80,   /* a partir de aquí la línea pasa a modo noche */
     steps: 240,    /* granularidad del color del cielo: 240 pasos en toda
                       la escena. Evita repintar el SVG en cada frame. */
     /* Centro de lectura, como fracción de la altura visible. Tiene que
@@ -628,12 +630,8 @@ const Scrolly = (function () {
     const seg = (k, f) => (at[k + 1] - at[k]) * f;
 
     const E = g.utils.selector(tw);
-    /* Los pisos se ordenan por altura para que el encofrado suba como
-       una grúa real, torre a torre y no torre por torre. */
-    const floors = $$('.fl', tw).sort((a, b) =>
-      parseFloat(a.firstElementChild.getAttribute('y')) - parseFloat(b.firstElementChild.getAttribute('y')));
-    const glass = $$('.fl__gh', tw);
-    const brick = $$('.fl__br', tw);
+    /* Las ventanas se encienden en el orden en que se trazaron: de la
+       base a la corona, con una de cada siete en rojo de plano. */
     const lamps = $$('.fl__w', tw).sort((a, b) => a.dataset.o - b.dataset.o);
     const warm = (el) => el.classList.contains('is-warm');
 
@@ -650,57 +648,70 @@ const Scrolly = (function () {
       }
     });
 
-    /* --- Etapa 01 · Terreno: la lámina se presenta sola --- */
-    tl.fromTo(E('.tw-dims'), { opacity: 0 }, { opacity: 1, duration: seg(0, 0.85) }, at[0])
-      .fromTo(E('.sk-sun'), { opacity: 0, y: -60 }, { opacity: 0.38, y: 0, duration: seg(0, 1) + seg(1, 1) }, at[0]);
+    /* --- Etapa 01 · Diagnóstico: entran las cotas y la leyenda --- */
+    tl.fromTo(E('.tw-dims'), { opacity: 0 }, { opacity: 1, duration: seg(0, 0.8) }, at[0])
+      .fromTo(E('.mt-sw'), { opacity: 0, y: 6 },
+        { opacity: 1, y: 0, duration: seg(0, 0.4), stagger: seg(0, 0.12) }, at[0] + seg(0, 0.2))
+      .fromTo(E('.sk-sun'), { opacity: 0, y: -60 },
+        { opacity: 0.38, y: 0, duration: seg(0, 1) + seg(1, 1) }, at[0]);
 
-    /* --- Etapa 02 · Excavación --- */
-    tl.fromTo(E('.tw-pit'), { opacity: 0 }, { opacity: 1, duration: 0.1 }, at[1])
-      .fromTo(E('.tw-pitv'), { scaleY: 0, svgOrigin: '325 542' }, { scaleY: 1, duration: seg(1, 0.6) }, at[1])
-      .fromTo(E('.tw-work'), { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: seg(1, 0.4) }, at[1] + seg(1, 0.15))
-      .to(E('.wk-m'), { opacity: 0.55, duration: 0.15, stagger: 0.02 }, at[1] + seg(1, 0.4));
+    /* --- Etapa 02 · Plomada: cuelga del canto y se asienta ---
+       El vaivén es un péndulo: se va hacia un lado y vuelve
+       pasándose un poco del otro, que es como se lee un
+       asentamiento real. */
+    tl.fromTo(E('.pl-l'), { opacity: 0 }, { opacity: 1, duration: 0.08 }, at[1])
+      .fromTo(E('.pl-b'), { opacity: 0 }, { opacity: 1, duration: 0.08 }, at[1])
+      .fromTo(E('.tw-plumb'), { rotation: 0, svgOrigin: '398 395' },
+        { rotation: 4.5, duration: seg(1, 0.3), ease: 'sine.out' }, at[1])
+      .to(E('.tw-plumb'), { rotation: 0, duration: seg(1, 0.55), ease: 'elastic.out(1, 0.55)' },
+        at[1] + seg(1, 0.3))
+      .to(E('.tw-plumb'), { opacity: 0, duration: 0.12 }, at[3]);
 
-    /* --- Etapa 03 · Cimientos: acero, encofrado y placa --- */
-    tl.fromTo(E('.tw-rebar'), { opacity: 0 }, { opacity: 1, duration: seg(2, 0.35), stagger: 0.012 }, at[2])
-      .fromTo(E('.tw-found'), { opacity: 0 }, { opacity: 1, duration: 0.15 }, at[2] + seg(2, 0.15))
-      .fromTo(E('.tw-fstem'), { scaleY: 0, svgOrigin: '335 610' }, { scaleY: 1, duration: seg(2, 0.45) }, at[2] + seg(2, 0.2))
-      .fromTo(E('.tw-fslab'), { scaleX: 0, svgOrigin: '313 540' }, { scaleX: 1, duration: seg(2, 0.45) }, at[2] + seg(2, 0.45));
+    /* --- Etapa 03 · Inspección: las casillas suben por las cotas --- */
+    tl.fromTo(E('.rd-rail'), { opacity: 0 }, { opacity: 1, duration: 0.1 }, at[2])
+      .fromTo(E('.rd-box'), { opacity: 0, y: 16, scale: 0.7 },
+        { opacity: 1, y: 0, scale: 1, duration: seg(2, 0.3),
+          stagger: seg(2, 0.13), ease: 'back.out(1.8)' }, at[2]);
 
-    /* --- Etapa 04 · Estructura: la grúa llega y los pisos suben --- */
-    const g3 = seg(3, 0.75);                      /* Margen para la grúa */
-    tl.fromTo(E('.tw-crane'), { opacity: 0 }, { opacity: 1, duration: 0.1 }, at[3])
-      .fromTo(E('.cn-mast'), { scaleY: 0, svgOrigin: '706 540' }, { scaleY: 1, duration: g3 * 0.4 }, at[3] + 0.02)
-      .fromTo(floors, { opacity: 0, y: 5 },
-        { opacity: 1, y: 0, duration: 0.06, stagger: { each: g3 / floors.length } }, at[3] + g3 * 0.18)
-      .fromTo(E('.cn-jib'), { rotation: -9, svgOrigin: '706 196' },
-        { rotation: 7, duration: g3, ease: 'sine.inOut', yoyo: true, repeat: 1 }, at[3] + 0.02)
-      .fromTo(E('.cn-hook'), { y: 0 },
-        { y: -46, duration: g3 / 2, ease: 'sine.inOut', yoyo: true, repeat: 1 }, at[3] + 0.04)
-      .to(E('.tw-work'), { opacity: 0, duration: 0.15 }, at[3]);
+    /* --- Etapa 04 · Andamio: crece desde el suelo, con el hoist --- */
+    tl.fromTo(E('.tw-scaf'), { opacity: 0, scaleY: 0, svgOrigin: '307 760' },
+      { opacity: 1, scaleY: 1, duration: seg(3, 0.75), ease: 'power2.out' }, at[3])
+      .fromTo(E('.tw-hoist'), { opacity: 0, scaleY: 0, svgOrigin: '331 760' },
+        { opacity: 1, scaleY: 1, duration: seg(3, 0.65), ease: 'power2.out' }, at[3] + seg(3, 0.1))
+      .fromTo(E('.ho-cab'), { opacity: 0, y: 300 },
+        { opacity: 1, y: 0, duration: seg(3, 0.55), ease: 'power1.inOut' }, at[3] + seg(3, 0.25));
 
-    /* --- Etapa 05 · Envolvente: ladrillo, vidrio y andamios --- */
-    const g4 = seg(4, 0.8);
-    tl.fromTo(brick, { opacity: 0 }, { opacity: 1, duration: 0.06, stagger: { each: g4 / brick.length } }, at[4])
-      .fromTo(glass, { opacity: 0 }, { opacity: 1, duration: 0.06, stagger: { each: g4 / glass.length } }, at[4])
-      .fromTo(lamps, { opacity: 0 }, { opacity: (i, el) => (warm(el) ? 0.1 : 0.08), duration: 0.05,
-        stagger: { each: g4 / lamps.length } }, at[4])
-      .fromTo(E('.tw-scaf'), { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.25 }, at[4] + seg(4, 0.1));
+    /* --- Etapa 05 · Ocupación: se encienden las ventanas --- */
+    const g5 = seg(4, 1);
+    tl.to(E('.sk-sun'), { y: 300, opacity: 0, duration: g5 * 0.8 }, at[4] - g5 * 0.12)
+      .fromTo(E('.sk-band'), { scaleY: 0.2, opacity: 0, svgOrigin: '350 760' },
+        { scaleY: 1, opacity: 0.9, duration: g5 * 0.35, yoyo: true, repeat: 1 }, at[4] - g5 * 0.05)
+      .fromTo(lamps, { opacity: (i, el) => (warm(el) ? 0.1 : 0.08) },
+        { opacity: (i, el) => (warm(el) ? 0.95 : 0.9), duration: 0.05,
+          stagger: { each: g5 * 0.6 / lamps.length } }, at[4] + g5 * 0.25)
+      .to(E('.ct-b'), { opacity: 0.13, duration: g5 * 0.5 }, at[4]);
 
-    /* --- Etapa 06 · Acabados: se desmonta el andamio, se corona la obra --- */
-    tl.to(E('.tw-scaf'), { opacity: 0, x: 12, duration: seg(5, 0.3) }, at[5])
-      .to(E('.cn-load'), { opacity: 0, duration: 0.1 }, at[5])
-      .fromTo(E('.tw-crown'), { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: seg(5, 0.5) }, at[5] + seg(5, 0.15))
-      .to(E('.cn-mast'), { scaleY: 0.35, svgOrigin: '706 540', duration: seg(5, 0.55) }, at[5] + seg(5, 0.35));
+    /* --- Etapa 06 · Reparación: se abre un paño y entra vidrio nuevo --- */
+    const g6 = seg(5, 1);
+    tl.fromTo(E('.fx-crack'), { opacity: 0 }, { opacity: 1, duration: g6 * 0.2 }, at[5])
+      .fromTo(E('.fx-old'), { opacity: 0 }, { opacity: 1, duration: g6 * 0.15 }, at[5] + g6 * 0.05)
+      .to(E('.fx-old'), { opacity: 0, x: -30, duration: g6 * 0.3 }, at[5] + g6 * 0.35)
+      .fromTo(E('.fx-new'), { opacity: 0, x: 34 },
+        { opacity: 1, x: 0, duration: g6 * 0.3 }, at[5] + g6 * 0.55)
+      .to(E('.fx-crack'), { opacity: 0, duration: g6 * 0.2 }, at[5] + g6 * 0.8)
+      .fromTo(E('.wk-off'), { opacity: 0 }, { opacity: 1, duration: g6 * 0.25 }, at[5] + g6 * 0.1);
 
-    /* --- Etapa 07 · Entrega: atardecer, luces y apagado de obra --- */
-    const g6 = seg(6, 1);
-    tl.to(E('.tw-crane'), { opacity: 0, duration: g6 * 0.2 }, at[6] + g6 * 0.05)
-      .to(E('.sk-sun'), { y: 300, opacity: 0, duration: g6 * 0.75 }, at[6] - g6 * 0.1)
-      .fromTo(E('.sk-band'), { scaleY: 0.2, opacity: 0 },
-        { scaleY: 1, opacity: 0.9, duration: g6 * 0.3, yoyo: true, repeat: 1 }, at[6] - g6 * 0.05)
-      .to(lamps, { opacity: (i, el) => (warm(el) ? 0.95 : 0.9), duration: 0.05,
-        stagger: { each: g6 * 0.55 / lamps.length } }, at[6] - g6 * 0.05)
-      .to(E('.ct-b'), { opacity: 0.13, duration: g6 * 0.4 }, at[6]);
+    /* --- Etapa 07 · Garantía: se desmonta el andamio y se estampa --- */
+    const g7 = seg(6, 1);
+    tl.to(E('.tw-scaf'), { opacity: 0, scaleY: 0, svgOrigin: '307 760',
+      duration: g7 * 0.4, ease: 'power2.in' }, at[6])
+      .to(E('.tw-hoist'), { opacity: 0, scaleY: 0, svgOrigin: '331 760',
+        duration: g7 * 0.4, ease: 'power2.in' }, at[6])
+      .to(E('.ho-cab'), { opacity: 0, y: 300, duration: g7 * 0.4, ease: 'power2.in' }, at[6])
+      .to(E('.wk-off'), { opacity: 0, duration: g7 * 0.2 }, at[6])
+      .fromTo(E('.tw-seal'), { opacity: 0, scale: 1.3, rotation: -14, svgOrigin: '398 282' },
+        { opacity: 1, scale: 1, rotation: -7, duration: g7 * 0.45, ease: 'back.out(1.7)' },
+        at[6] + g7 * 0.35);
 
     /* Parallax: el fondo y las nubes se mueven distinto al primer plano */
     tl.fromTo(E('.tw-city'), { y: -6 }, { y: 12, duration: 1 }, 0)
@@ -805,22 +816,32 @@ const Scrolly = (function () {
 
   function start() {
     if (on || !body || !tw) return;
-    if (!window.gsap || !window.ScrollTrigger) return;   /* sin GSAP: lámina estática */
+    const d = document.documentElement;
+    if (!window.gsap || !window.ScrollTrigger) {
+      /* Sin GSAP no hay lámina animada: se deshace el layout ligado al
+         scroll y el dibujo vuelve a su estado estático (noche, torre
+         entregada, ventanas encendidas). */
+      d.classList.remove('st');
+      return;
+    }
     window.gsap.registerPlugin(window.ScrollTrigger);
     window.ScrollTrigger.config({ ignoreMobileResize: true });
     build();
     setNight(false);
     measure();
     on = true;
-    document.documentElement.classList.add('st-ready');
+    /* .st-armed = "la animación es dueña del dibujo". El CSS esconde el
+       instrumental con esta clase, no con .st: una es cosa del layout y
+       la otra del dibujo. */
+    d.classList.add('st', 'st-armed');
   }
 
   function stop() {
     if (!on) return;
     if (tl) { tl.scrollTrigger.kill(); tl.kill(); tl = null; }
     on = false;
+    document.documentElement.classList.remove('st-armed');
     panels.forEach((p) => { p.style.opacity = ''; p.style.transform = ''; });
-    document.documentElement.classList.remove('st-ready');
     if (paper) paper.style.removeProperty('--sky');
     setNight(true);
     lastSky = lastStage = lastBar = -1; lastP = [];
@@ -856,6 +877,10 @@ const Scrolly = (function () {
     const d = document.documentElement;
     if (!mq || !mq.matches) { d.classList.add('st'); start(); }
     else setNight(true);
+    /* La escena ya está decidida, se muestre o no: sin esto la lámina
+       se quedaría invisible esperando a un .st-ready que solo el
+       módulo ponería. */
+    d.classList.add('st-ready');
     window.addEventListener('orientationchange', () => {
       setTimeout(() => { if (on) measure(); }, 260);
     });
@@ -863,7 +888,7 @@ const Scrolly = (function () {
 
   function refresh() { if (on) window.ScrollTrigger.refresh(); }
 
-  return { init, refresh, on: () => on };
+  return { init, refresh };
 })();
 
 /* =========================================================
